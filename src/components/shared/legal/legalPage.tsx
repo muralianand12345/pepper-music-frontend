@@ -144,7 +144,7 @@ const LegalPage = ({
 									Applies to
 								</dt>
 								<dd className="mt-1 text-sm text-foreground">
-									Pepper bot &amp; pepper.mrbotz.com
+									Pepper bot &amp; pepper.muralianand.in
 								</dd>
 							</div>
 						</dl>

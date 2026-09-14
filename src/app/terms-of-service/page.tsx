@@ -79,7 +79,7 @@ const sections: LegalSection[] = [
 				<p>
 					These Terms of Service (the &quot;Terms&quot;) govern your use of the{' '}
 					<Term>Pepper music bot</Term> (the &quot;Bot&quot;) and the website at{' '}
-					<Term>pepper.mrbotz.com</Term>. By adding Pepper to a Discord server,
+					<Term>pepper.muralianand.in</Term>. By adding Pepper to a Discord server,
 					issuing any of its commands, or using the website, you agree to these
 					Terms. If you do not agree, stop using the Bot.
 				</p>

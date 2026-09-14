@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 	description:
 		'Discover Pepper, your ultimate music companion on Discord. Play, manage, and enjoy music seamlessly with our powerful music bot. Add Pepper to your server today!',
 	openGraph: {
-		images: 'https://pepper.mrbotz.com/images/pepperLogo.png',
+		images: 'https://pepper.muralianand.in/images/pepperLogo.png',
 	},
 };
 

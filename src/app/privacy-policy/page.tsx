@@ -84,7 +84,7 @@ const sections: LegalSection[] = [
 				<p>
 					This Privacy Policy explains what information the{' '}
 					<Term>Pepper music bot</Term> (the &quot;Bot&quot;) and the website at{' '}
-					<Term>pepper.mrbotz.com</Term> collect, why we collect it, how long we
+					<Term>pepper.muralianand.in</Term> collect, why we collect it, how long we
 					keep it, and the choices you have. It applies to everyone who uses
 					Pepper in a Discord server, links an account to it, or browses the
 					website.
