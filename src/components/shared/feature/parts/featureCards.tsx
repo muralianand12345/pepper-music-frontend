@@ -1,4 +1,4 @@
-import { Award, Clock, Music, Server, Users, Zap } from 'lucide-react';
+import { Award, Clock, ListMusic, Music, Server, Zap } from 'lucide-react';
 
 import { Cell, CellGrid, IconChip } from '@/components/shared/page/parts';
 
@@ -16,10 +16,10 @@ const FeatureCardContent = [
 			'Search and enjoy music in multiple languages, with every response translated to match.',
 	},
 	{
-		icon: <Users className="h-4 w-4" />,
-		title: 'Community Playlists',
+		icon: <ListMusic className="h-4 w-4" />,
+		title: 'Your Own Playlists',
 		description:
-			'Let server members add songs to the queue and build a collaborative listening session.',
+			'Build playlists with /playlist, keep them private, or share a code anyone can paste into /play.',
 	},
 	{
 		icon: <Zap className="h-4 w-4" />,

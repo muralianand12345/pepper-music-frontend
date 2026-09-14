@@ -138,6 +138,13 @@ const sections: LegalSection[] = [
 								'To power the /chart command, queue features and aggregate statistics.',
 						},
 						{
+							label: 'Custom playlists',
+							detail:
+								'If you use /playlist: each playlist’s name, share code, owner, visibility, songs (track details plus who added each one and when), play count and when it was last played. A transfer offer records who it was sent to and expires after 24 hours; songs offered to pick from while adding are held for 10 minutes.',
+							purpose:
+								'To save, play, share and transfer the playlists you build, and to rank public playlists on our statistics page.',
+						},
+						{
 							label: 'Connected Spotify account',
 							detail:
 								'If you run /login: an OAuth access token, a refresh token and your Spotify display name.',
@@ -294,6 +301,14 @@ const sections: LegalSection[] = [
 					not appear there, ask us in the support server and we will exclude
 					you.
 				</Note>
+				<Note title="Public playlists">
+					A playlist you make public with <Term>/playlist visibility</Term> can
+					appear on the statistics page once it has been played — its{' '}
+					<Term>name, share code, song and play counts</Term>, and your Discord
+					username and avatar as its owner. Private playlists are only counted;
+					nothing else about them is published. Make a playlist private again
+					and it drops off the page within a few minutes.
+				</Note>
 				<p>
 					Server-level statistics are keyed by server ID and reflect what was
 					played by that community. Private message content, member lists and
@@ -370,6 +385,11 @@ const sections: LegalSection[] = [
 						<>
 							<Term>Spotify tokens</Term> are deleted immediately when you run{' '}
 							<Term>/logout</Term>.
+						</>,
+						<>
+							<Term>Custom playlists</Term> are kept until you delete them with{' '}
+							<Term>/playlist delete</Term>, which erases the playlist and its
+							songs immediately.
 						</>,
 						<>
 							<Term>Technical logs</Term> are short-lived and rotate out
@@ -523,8 +543,8 @@ const PrivacyPolicy: NextPage<Props> = ({}) => {
 			eyebrow="Legal"
 			title="Privacy Policy"
 			summary="What Pepper stores when you play music on Discord, why it stores it, who else sees it, and how to have it removed."
-			updated="September 6, 2026"
-			effective="September 6, 2026"
+			updated="September 14, 2026"
+			effective="September 14, 2026"
 			highlights={highlights}
 			sections={sections}
 			related={{

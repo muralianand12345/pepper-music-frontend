@@ -260,6 +260,31 @@ export interface StatsServers {
 	servers: StatsServerInsight[];
 }
 
+/** `GET /stats/playlists` → `playlists[]`. Only public playlists that have been played are listed. */
+export interface StatsPublicPlaylist {
+	rank: number;
+	/** Share code — pasting it into `/play` queues the playlist. */
+	code: string;
+	name: string;
+	ownerId: string;
+	ownerUsername: string | null;
+	ownerAvatar: string | null;
+	trackCount: number;
+	playCount: number;
+	lastPlayedAt: string | null;
+	createdAt: string;
+}
+
+/** `GET /stats/playlists` — private playlists are only ever counted. */
+export interface StatsPlaylists {
+	totalPlaylists: number;
+	publicPlaylists: number;
+	privatePlaylists: number;
+	publicPlays: number;
+	limit: number;
+	playlists: StatsPublicPlaylist[];
+}
+
 export interface StatsRealtimeTrack {
 	guildId: string;
 	guildName: string | null;
@@ -306,6 +331,7 @@ export interface StatsBundle {
 	requesters: StatsRequesters | null;
 	playtime: StatsPlaytime | null;
 	servers: StatsServers | null;
+	playlists: StatsPlaylists | null;
 }
 
 export interface FeatureCardProps {

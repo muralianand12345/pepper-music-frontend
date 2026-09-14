@@ -269,7 +269,11 @@ const AboutUs: NextPage<Props> = async ({}) => {
 											<code className="font-mono text-foreground/80">
 												/login
 											</code>
-											.
+											, and raises your{' '}
+											<code className="font-mono text-foreground/80">
+												/playlist
+											</code>{' '}
+											limit from 1 playlist of 10 songs to 5 playlists of 50.
 										</p>
 									</div>
 

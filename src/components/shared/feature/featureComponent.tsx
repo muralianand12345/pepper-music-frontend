@@ -313,7 +313,7 @@ const FeatureComponent: React.FC = () => {
 								{
 									icon: <Globe2 className="h-4 w-4" />,
 									title: 'Free, everywhere',
-									body: 'No premium tier, no locked commands, no usage limits.',
+									body: 'No paid tier and no locked commands. Joining our support server raises a few limits, for free.',
 								},
 							].map((item) => (
 								<Cell key={item.title} className="p-6">

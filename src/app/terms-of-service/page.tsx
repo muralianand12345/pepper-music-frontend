@@ -133,8 +133,9 @@ const sections: LegalSection[] = [
 				</Note>
 				<Note title="No paid plans">
 					Pepper is free. Some features — such as linking a Spotify account with{' '}
-					<Term>/login</Term> and unlimited playlist queueing — are unlocked by
-					joining our{' '}
+					<Term>/login</Term>, unlimited playlist queueing, and room for 5 custom
+					playlists of 50 songs each with <Term>/playlist</Term> instead of 1
+					playlist of 10 — are unlocked by joining our{' '}
 					<Link
 						href={discordServerLink}
 						target="_blank"
@@ -189,6 +190,7 @@ const sections: LegalSection[] = [
 					items={[
 						'Use the Bot for anything unlawful, or in a way that infringes copyright or other rights.',
 						'Harass, threaten, defame or endanger anyone, or play content intended to harm or distress others.',
+						'Give a playlist a name that is abusive, hateful or impersonates someone — public playlist names are shown on our website, and we may make private or remove any playlist that breaks these rules.',
 						'Abuse, spam or automate commands in a way that degrades the service for others, or attempt to bypass cooldowns, DJ restrictions or usage limits.',
 						'Probe, scan, reverse-engineer or attack the Bot, its API, its audio nodes or any connected system, or attempt to access data that is not yours.',
 						'Resell, rent or commercially exploit access to the Bot, or present it as your own service.',
@@ -449,8 +451,8 @@ const TermsOfService: NextPage<Props> = ({}) => {
 			eyebrow="Legal"
 			title="Terms of Service"
 			summary="The agreement between you and Pepper: who can use the Bot, how it may be used, what we promise, and what we do not."
-			updated="September 6, 2026"
-			effective="September 6, 2026"
+			updated="September 14, 2026"
+			effective="September 14, 2026"
 			highlights={highlights}
 			sections={sections}
 			related={{

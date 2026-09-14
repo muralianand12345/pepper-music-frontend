@@ -2,6 +2,7 @@ import { getStatsBundle } from '@/lib/stats-api';
 
 import StatsInsights from './parts/statsInsights';
 import StatsMusicPage from './parts/statsMusic';
+import StatsPlaylistsCard from './parts/statsPlaylists';
 import StatsRealtimeCard from './parts/statsRealtime';
 import StatsRequestersCard from './parts/statsRequesters';
 import StatsServersCard from './parts/statsServers';
@@ -12,6 +13,7 @@ const StatsComponent: React.FC = async () => {
 		requesters: 10,
 		playtime: 10,
 		servers: 10,
+		playlists: 10,
 	});
 
 	return (
@@ -25,6 +27,7 @@ const StatsComponent: React.FC = async () => {
 				/>
 				<StatsMusicPage songs={stats.songs} />
 				<StatsRequestersCard requesters={stats.requesters} />
+				<StatsPlaylistsCard playlists={stats.playlists} />
 				<StatsServersCard servers={stats.servers} />
 			</div>
 		</div>

@@ -17,7 +17,7 @@ interface Props {}
 export const metadata = {
 	title: 'Stats | What we have achieved with Pepper',
 	description:
-		'Live and all-time Pepper music bot statistics — active players, listeners, top songs, top requesters and server insights.',
+		'Live and all-time Pepper music bot statistics — active players, listeners, top songs, top requesters, public playlists and server insights.',
 	keywords: [
 		'Discord music bot stats',
 		'Pepper music bot statistics',

@@ -1,6 +1,7 @@
 import {
 	StatsBundle,
 	StatsOverview,
+	StatsPlaylists,
 	StatsPlaytime,
 	StatsRealtime,
 	StatsRequesters,
@@ -81,6 +82,14 @@ export const getServer = (guildId: string): Promise<StatsServerInsight> =>
 		ttlMs: STATS_TTL_MS,
 	});
 
+/** Added in Pepper-Bot 5.14.0; older bots 404 and the section is left out. */
+export const getPlaylists = (limit: number = DEFAULT_LIMIT): Promise<StatsPlaylists> =>
+	readStats<StatsPlaylists>('/playlists', {
+		key: `stats:playlists:${limit}`,
+		ttlMs: STATS_TTL_MS,
+		params: { limit },
+	});
+
 const settled = <T>(result: PromiseSettledResult<T>, label: string): T | null => {
 	if (result.status === 'fulfilled') return result.value;
 	console.error(`[stats] ${label} failed:`, result.reason);
@@ -92,6 +101,7 @@ export interface StatsBundleOptions {
 	requesters?: number;
 	playtime?: number;
 	servers?: number;
+	playlists?: number;
 }
 
 /**
@@ -99,14 +109,16 @@ export interface StatsBundleOptions {
  * null so the rest of the page still renders.
  */
 export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<StatsBundle> => {
-	const [realtime, overview, songs, requesters, playtime, servers] = await Promise.allSettled([
-		getRealtime(),
-		getOverview(),
-		getSongs(options.songs ?? 20),
-		getRequesters(options.requesters ?? 10),
-		getPlaytime(options.playtime ?? 10),
-		getServers(options.servers ?? 10),
-	]);
+	const [realtime, overview, songs, requesters, playtime, servers, playlists] =
+		await Promise.allSettled([
+			getRealtime(),
+			getOverview(),
+			getSongs(options.songs ?? 20),
+			getRequesters(options.requesters ?? 10),
+			getPlaytime(options.playtime ?? 10),
+			getServers(options.servers ?? 10),
+			getPlaylists(options.playlists ?? 10),
+		]);
 
 	return {
 		generatedAt: new Date().toISOString(),
@@ -116,5 +128,6 @@ export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<
 		requesters: settled(requesters, 'requesters'),
 		playtime: settled(playtime, 'playtime'),
 		servers: settled(servers, 'servers'),
+		playlists: settled(playlists, 'playlists'),
 	};
 };
