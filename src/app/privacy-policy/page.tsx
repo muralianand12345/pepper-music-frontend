@@ -304,7 +304,7 @@ const sections: LegalSection[] = [
 				<Note title="Public playlists">
 					A playlist you make public with <Term>/playlist visibility</Term> can
 					appear on the statistics page once it has been played — its{' '}
-					<Term>name, share code, song and play counts</Term>, and your Discord
+					<Term>name, share code, play count and the songs in it</Term>, and your Discord
 					username and avatar as its owner. Private playlists are only counted;
 					nothing else about them is published. Make a playlist private again
 					and it drops off the page within a few minutes.

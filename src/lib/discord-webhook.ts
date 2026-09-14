@@ -57,7 +57,8 @@ const asBlockquote = (message: string): string =>
 
 const resolveThumbnailUrl = (): string | null => {
 	const base = process.env.NEXT_PUBLIC_BASE_URL?.trim().replace(/\/+$/, '');
-	return base?.startsWith('http') ? `${base}/images/pepperLogo.png` : null;
+	// The white variant stays legible on both light and dark Discord themes.
+	return base?.startsWith('http') ? `${base}/images/brand/pepper-mascot-white.png` : null;
 };
 
 interface WebhookContext {

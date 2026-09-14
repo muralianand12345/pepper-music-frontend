@@ -1,6 +1,7 @@
 import {
 	StatsBundle,
 	StatsOverview,
+	StatsPlaylistDetail,
 	StatsPlaylists,
 	StatsPlaytime,
 	StatsRealtime,
@@ -82,12 +83,26 @@ export const getServer = (guildId: string): Promise<StatsServerInsight> =>
 		ttlMs: STATS_TTL_MS,
 	});
 
+/** How many playlists the stats page ranks. Only these can be opened — see `/api/stats/playlists/[code]`. */
+export const TOP_PLAYLIST_COUNT = 10;
+
 /** Added in Pepper-Bot 5.14.0; older bots 404 and the section is left out. */
-export const getPlaylists = (limit: number = DEFAULT_LIMIT): Promise<StatsPlaylists> =>
+export const getPlaylists = (limit: number = TOP_PLAYLIST_COUNT): Promise<StatsPlaylists> =>
 	readStats<StatsPlaylists>('/playlists', {
 		key: `stats:playlists:${limit}`,
 		ttlMs: STATS_TTL_MS,
 		params: { limit },
+	});
+
+/**
+ * One public playlist with its songs. Every distinct code is its own cache
+ * entry, so callers must only pass codes taken from the top list rather than
+ * whatever a browser sends. A bot without this endpoint answers 404.
+ */
+export const getPlaylist = (code: string): Promise<StatsPlaylistDetail> =>
+	readStats<StatsPlaylistDetail>(`/playlists/${encodeURIComponent(code)}`, {
+		key: `stats:playlist:${code}`,
+		ttlMs: STATS_TTL_MS,
 	});
 
 const settled = <T>(result: PromiseSettledResult<T>, label: string): T | null => {
@@ -117,7 +132,7 @@ export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<
 			getRequesters(options.requesters ?? 10),
 			getPlaytime(options.playtime ?? 10),
 			getServers(options.servers ?? 10),
-			getPlaylists(options.playlists ?? 10),
+			getPlaylists(options.playlists ?? TOP_PLAYLIST_COUNT),
 		]);
 
 	return {

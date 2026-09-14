@@ -33,7 +33,7 @@ export const featursLink = '/bot-features';
 export const termsLink = '/terms-of-service';
 export const privacyLink = '/privacy-policy';
 export const feedbackLink = '/feedback';
-export const pepperLogoLink = '/images/pepperLogo.png';
+export const pepperLogoLink = '/images/brand/pepper-mascot-transparent.png';
 
 export const features = [
 	{

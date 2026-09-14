@@ -1,4 +1,4 @@
-import { getStatsBundle } from '@/lib/stats-api';
+import { getStatsBundle, TOP_PLAYLIST_COUNT } from '@/lib/stats-api';
 
 import StatsInsights from './parts/statsInsights';
 import StatsMusicPage from './parts/statsMusic';
@@ -13,7 +13,8 @@ const StatsComponent: React.FC = async () => {
 		requesters: 10,
 		playtime: 10,
 		servers: 10,
-		playlists: 10,
+		// Must match the list the playlist route checks codes against.
+		playlists: TOP_PLAYLIST_COUNT,
 	});
 
 	return (

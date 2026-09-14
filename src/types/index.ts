@@ -285,6 +285,24 @@ export interface StatsPlaylists {
 	playlists: StatsPublicPlaylist[];
 }
 
+export interface StatsPlaylistTrack {
+	position: number;
+	title: string;
+	author: string;
+	uri: string;
+	sourceName: string;
+	duration: number;
+	isStream: boolean;
+	artworkUrl: string | null;
+}
+
+/** `GET /stats/playlists/:code` — a public playlist and its songs. */
+export interface StatsPlaylistDetail extends Omit<StatsPublicPlaylist, 'rank'> {
+	/** Sum of track durations, live streams excluded. */
+	totalDurationMs: number;
+	tracks: StatsPlaylistTrack[];
+}
+
 export interface StatsRealtimeTrack {
 	guildId: string;
 	guildName: string | null;
