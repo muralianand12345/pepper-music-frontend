@@ -35,7 +35,9 @@ const StatsPlaylistsCard: React.FC<StatsPlaylistsProps> = ({ playlists }) => {
 				</span>
 			}
 		>
-			<CellGrid className="sm:grid-cols-2 lg:grid-cols-4">
+			{/* Two across even on a phone — four single-figure tiles stacked would
+			    push the list itself a full screen down. */}
+			<CellGrid className="grid-cols-2 lg:grid-cols-4">
 				<StatTile
 					icon={<ListMusic className="h-4 w-4" />}
 					label="Playlists created"

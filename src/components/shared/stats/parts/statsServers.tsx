@@ -26,11 +26,14 @@ const StatsServersCard: React.FC<StatsServersProps> = ({ servers }) => {
 			title="Server insights"
 			description="The busiest communities on Pepper, ranked by total plays."
 		>
-			<div className="grid gap-4 lg:grid-cols-2">
+			{/* `grid-cols-1` is minmax(0, 1fr): an implicit column sizes to its
+			    content, so a long guild name or top track (both `truncate`, so
+			    unbreakable) would widen the card past a phone's screen. */}
+			<div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
 				{servers.servers.map((server, index) => (
 					<div
 						key={server.guildId}
-						className="rounded-lg border border-border bg-surface p-5 transition-colors hover:border-foreground/25 hover:bg-surface-hover"
+						className="min-w-0 rounded-lg border border-border bg-surface p-4 transition-colors hover:border-foreground/25 hover:bg-surface-hover sm:p-5"
 					>
 						<div className="flex items-start gap-3">
 							<Rank position={index + 1} />
@@ -49,7 +52,7 @@ const StatsServersCard: React.FC<StatsServersProps> = ({ servers }) => {
 
 							<div className="min-w-0 flex-1">
 								<div className="flex flex-wrap items-center gap-2">
-									<span className="truncate font-medium text-foreground">
+									<span className="min-w-0 max-w-full truncate font-medium text-foreground">
 										{server.guildName ?? `Guild ${server.guildId}`}
 									</span>
 									{server.live && (

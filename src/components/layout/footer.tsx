@@ -28,6 +28,7 @@ const columns = [
 		links: [
 			{ label: 'Support server', href: discordServerLink, external: true },
 			{ label: 'About us', href: '/about-us', external: false },
+			{ label: 'The creator', href: '/creator', external: false },
 			{ label: 'Send feedback', href: feedbackLink, external: false },
 		],
 	},

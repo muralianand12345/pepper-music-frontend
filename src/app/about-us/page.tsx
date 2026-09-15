@@ -11,6 +11,7 @@ import {
 	ShieldCheck,
 	Sparkles,
 	Sparkle,
+	UserRound,
 	Users,
 	Wallet,
 	Zap,
@@ -155,6 +156,13 @@ const AboutUs: NextPage<Props> = async ({}) => {
 								>
 									<ShieldCheck className="h-3.5 w-3.5" />
 									Privacy policy
+								</Link>
+								<Link
+									href="/creator"
+									className="mx-auto mt-2.5 flex w-fit items-center gap-1.5 text-[13px] font-medium text-foreground/80 underline decoration-foreground/35 underline-offset-4 transition-colors hover:decoration-foreground"
+								>
+									<UserRound className="h-3.5 w-3.5" />
+									Meet the creator
 								</Link>
 							</Surface>
 						</Reveal>

@@ -92,6 +92,11 @@ const depth = [
 		title: 'Autoplay when the queue empties',
 		body: "Autoplay currently uses Lavalink's own recommendations across Spotify and SoundCloud. Our own recommendation algorithm is in the works.",
 	},
+	{
+		icon: <ListMusic className="h-4 w-4" />,
+		title: 'Custom playlists',
+		body: '/playlist saves your own playlists. Keep them private, or make one public and share its code — anyone can paste it into /play to queue the lot.',
+	},
 ];
 
 const FeatureComponent: React.FC = () => {

@@ -2,18 +2,19 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { ChevronRight, Disc3, ListMusic, RotateCw, UserRound } from 'lucide-react';
+import { ChevronRight, Disc3, ListMusic, RotateCw, UserRound, X } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	Dialog,
+	DialogClose,
 	DialogContent,
 	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { StatsPlaylistDetail, StatsPublicPlaylist } from '@/types';
+import { StatsPlaylistDetail, StatsPlaylistTrack, StatsPublicPlaylist } from '@/types';
 import {
 	formatDuration,
 	formatNumber,
@@ -30,6 +31,11 @@ const DETAIL_FRESH_MS = 60_000;
 
 const plural = (count: number, word: string): string =>
 	`${formatNumber(count)} ${word}${count === 1 ? '' : 's'}`;
+
+/** Distinct artwork in playlist order — an album repeated back to back would tile as one image. */
+const coverArtwork = (tracks: StatsPlaylistTrack[]): string[] => [
+	...new Set(tracks.flatMap((track) => (track.artworkUrl ? [track.artworkUrl] : []))),
+];
 
 type DetailState =
 	| { status: 'loading' }
@@ -67,6 +73,41 @@ const OwnerLink = ({
 	</a>
 );
 
+/**
+ * Four distinct covers tile into a mosaic; fewer show the first one whole. Until
+ * the songs arrive (or when none have artwork) it is the plain playlist mark, at
+ * the same size, so the header does not jump when they load.
+ */
+const PlaylistCover = ({ artwork }: { artwork: string[] }) => {
+	const tiles = artwork.length >= 4 ? artwork.slice(0, 4) : artwork.slice(0, 1);
+
+	return (
+		<div
+			aria-hidden
+			className={cn(
+				'grid size-20 shrink-0 overflow-hidden rounded-lg bg-primary text-primary-foreground shadow-sm ring-1 ring-border sm:size-24',
+				tiles.length === 4 && 'grid-cols-2'
+			)}
+		>
+			{tiles.length ? (
+				tiles.map((src) => (
+					<div key={src} className="relative">
+						<Image
+							src={src}
+							alt=""
+							fill
+							sizes={tiles.length === 4 ? '48px' : '96px'}
+							className="object-cover"
+						/>
+					</div>
+				))
+			) : (
+				<ListMusic className="m-auto h-7 w-7" />
+			)}
+		</div>
+	);
+};
+
 const PlaylistRow = ({
 	playlist,
 	onOpen,
@@ -94,7 +135,9 @@ const PlaylistRow = ({
 				>
 					{playlist.name}
 				</button>
-				<span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
+				{/* Phone only — from `sm` the count moves beside the code button, so it
+				    centres on the whole row rather than riding the name's line. */}
+				<span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground sm:hidden">
 					{plural(playlist.playCount, 'play')}
 				</span>
 			</div>
@@ -117,6 +160,9 @@ const PlaylistRow = ({
 			/>
 		</div>
 
+		<span className="hidden shrink-0 font-mono text-sm tabular-nums text-muted-foreground sm:block">
+			{plural(playlist.playCount, 'play')}
+		</span>
 		<PlaylistCode
 			code={playlist.code}
 			name={playlist.name}
@@ -132,8 +178,8 @@ const PlaylistRow = ({
 const TrackSkeleton = ({ rows }: { rows: number }) => (
 	<div className="animate-pulse divide-y divide-border" aria-hidden>
 		{Array.from({ length: rows }).map((_, index) => (
-			<div key={index} className="flex items-center gap-3 px-6 py-2.5">
-				<div className="h-3 w-6 shrink-0 rounded bg-surface-strong" />
+			<div key={index} className="flex items-center gap-3 px-4 py-2.5 sm:px-6">
+				<div className="h-3 w-5 shrink-0 rounded bg-surface-strong sm:w-6" />
 				<div className="h-10 w-10 shrink-0 rounded bg-surface-strong" />
 				<div className="min-w-0 flex-1">
 					<div className="h-3.5 w-3/5 rounded bg-surface-strong" />
@@ -159,9 +205,9 @@ const TrackList = ({ detail }: { detail: StatsPlaylistDetail }) => {
 			{detail.tracks.map((track) => (
 				<li
 					key={`${track.position}-${track.uri}`}
-					className="flex items-center gap-3 px-6 py-2.5 transition-colors hover:bg-surface-hover"
+					className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-hover sm:px-6"
 				>
-					<span className="w-6 shrink-0 text-right font-mono text-[13px] tabular-nums text-foreground/45">
+					<span className="w-5 shrink-0 text-right font-mono text-[13px] tabular-nums text-foreground/45 sm:w-6">
 						{track.position}
 					</span>
 					<div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-surface-hover">
@@ -273,31 +319,40 @@ const PlaylistDialog = ({
 
 	// Prefer the freshly fetched numbers once they arrive; the list row is up to a minute old.
 	const summary = state.status === 'ready' ? state.data : playlist;
+	const artwork = state.status === 'ready' ? coverArtwork(state.data.tracks) : [];
 
 	return (
 		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="flex max-h-[85vh] w-[calc(100%-2rem)] max-w-xl flex-col gap-0 overflow-hidden p-0">
+			<DialogContent
+				showCloseButton={false}
+				className={cn(
+					// Phones get a bottom sheet: full width, in thumb reach, and the
+					// song list keeps as much of the screen as it can.
+					'bottom-0 left-0 right-0 top-auto flex max-h-[92dvh] w-full translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none rounded-t-2xl border-x-0 border-b-0 p-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+					// From `sm` up it is the centred dialog, with only a small rise.
+					'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-h-[85vh] sm:w-[calc(100%-2rem)] sm:max-w-xl sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-xl sm:border sm:data-[state=closed]:slide-out-to-bottom-2 sm:data-[state=open]:slide-in-from-bottom-2'
+				)}
+			>
 				{playlist && summary && (
 					<>
-						<DialogHeader className="gap-0 border-b border-border px-6 pb-5 pt-6 text-left sm:text-left">
-							<div className="flex items-start gap-3 pr-8">
-								<span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
-									<ListMusic className="h-5 w-5" />
-								</span>
+						<DialogHeader className="shrink-0 gap-0 border-b border-border px-4 pb-4 pt-5 text-left sm:px-6 sm:pb-5 sm:pt-6 sm:text-left">
+							<div className="flex items-center gap-4 pr-10 sm:gap-5">
+								<PlaylistCover artwork={artwork} />
 								<div className="min-w-0">
 									<p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-										Public playlist
+										#{playlist.rank} · Public playlist
 									</p>
-									<DialogTitle className="mt-1.5 break-words text-lg leading-snug tracking-[-0.01em]">
+									<DialogTitle className="mt-1.5 line-clamp-2 break-words text-xl font-bold leading-tight tracking-[-0.02em] sm:text-2xl">
 										{summary.name}
 									</DialogTitle>
+									<p className="mt-2 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
+										by <OwnerLink playlist={summary} />
+									</p>
 								</div>
 							</div>
 
 							<DialogDescription asChild>
 								<div className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-muted-foreground/85">
-									<OwnerLink playlist={summary} />
-									<span aria-hidden>·</span>
 									<span>{plural(summary.trackCount, 'song')}</span>
 									{state.status === 'ready' && state.data.totalDurationMs > 0 && (
 										<>
@@ -307,20 +362,33 @@ const PlaylistDialog = ({
 									)}
 									<span aria-hidden>·</span>
 									<span>{plural(summary.playCount, 'play')}</span>
+									{summary.lastPlayedAt && (
+										<>
+											<span aria-hidden>·</span>
+											<span>played {formatRelativeTime(summary.lastPlayedAt)}</span>
+										</>
+									)}
 								</div>
 							</DialogDescription>
 
-							<div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-								<PlaylistCode code={playlist.code} name={summary.name} />
-								<span className="text-[13px] text-muted-foreground">
+							<div className="mt-4 flex flex-col gap-2.5 rounded-lg border border-border bg-surface p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:pl-4">
+								<p className="text-[13px] leading-snug text-muted-foreground">
 									Paste the code into{' '}
 									<code className="font-mono text-foreground/80">/play</code> to
-									queue it.
-								</span>
+									queue every song.
+								</p>
+								<PlaylistCode
+									code={playlist.code}
+									name={summary.name}
+									className="h-10 w-full justify-center bg-background text-[13px] sm:h-8 sm:w-auto"
+								/>
 							</div>
 						</DialogHeader>
 
-						<div className="min-h-0 flex-1 overflow-y-auto" aria-busy={state.status === 'loading'}>
+						<div
+							className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[env(safe-area-inset-bottom)]"
+							aria-busy={state.status === 'loading'}
+						>
 							{state.status === 'loading' && (
 								<TrackSkeleton rows={Math.min(Math.max(playlist.trackCount, 3), 6)} />
 							)}
@@ -339,6 +407,12 @@ const PlaylistDialog = ({
 							)}
 							{state.status === 'ready' && <TrackList detail={state.data} />}
 						</div>
+
+						{/* A roomier target than the stock close button — this is thumb-driven on a phone. */}
+						<DialogClose className="absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full text-muted-foreground outline-none transition-colors hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring sm:right-4 sm:top-4">
+							<X className="h-4 w-4" />
+							<span className="sr-only">Close</span>
+						</DialogClose>
 					</>
 				)}
 			</DialogContent>

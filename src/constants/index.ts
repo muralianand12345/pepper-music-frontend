@@ -15,8 +15,17 @@ export const legalNavItems: MenuItemType[] = [
 	{ name: 'Privacy Policy', value: '/privacy-policy' },
 ];
 
+/** Pages linked from the footer and from other pages, but kept out of the header. */
+export const secondaryNavItems: MenuItemType[] = [
+	{ name: 'The creator', value: '/creator' },
+];
+
 /** Every first-party page. `middleware.ts` derives its public-route list from this. */
-export const menuItems: MenuItemType[] = [...primaryNavItems, ...legalNavItems];
+export const menuItems: MenuItemType[] = [
+	...primaryNavItems,
+	...legalNavItems,
+	...secondaryNavItems,
+];
 
 export const commonRoutes = ['/auth', '/public', '/images', '/dashboard'];
 
@@ -65,7 +74,27 @@ export const MusicQuotes = [
   "“Music gives a soul to the universe, wings to the mind, flight to the imagination, and life to everything.” – Plato",
   "“Music is a world within itself, it’s a language we all understand.” – Stevie Wonder",
   "“If something happened where I couldn’t write music anymore, it would kill me. It’s not just a job. It’s not just a hobby. It’s why I get up in the morning.” – Hans Zimmer",
-  "“Your inner voice is the voice of divinity. To hear it, we need to be in solitude, even in crowded places.” – A. R. Rahman"
+  "“Your inner voice is the voice of divinity. To hear it, we need to be in solitude, even in crowded places.” – A. R. Rahman",
+  "“Music expresses that which cannot be said and on which it is impossible to be silent.” – Victor Hugo",
+  "“Music is the universal language of mankind.” – Henry Wadsworth Longfellow",
+  "“Music washes away from the soul the dust of everyday life.” – Berthold Auerbach",
+  "“Music is the wine that fills the cup of silence.” – Robert Fripp",
+  "“Where words leave off, music begins.” – Heinrich Heine",
+  "“I think music in itself is healing. It’s an explosive expression of humanity.” – Billy Joel",
+  "“The only truth is music.” – Jack Kerouac",
+  "“Music is the soundtrack of your life.” – Dick Clark",
+  "“If I were not a physicist, I would probably be a musician. I often think in music.” – Albert Einstein",
+  "“Music is the art which is most nigh to tears and memory.” – Oscar Wilde",
+  "“Life seems to go on without effort when I am filled with music.” – George Eliot",
+  "“Music, once admitted to the soul, becomes a sort of spirit, and never dies.” – Edward Bulwer-Lytton",
+  "“Music is love in search of a word.” – Sidney Lanier",
+  "“Music is the poetry of the air.” – Jean Paul",
+  "“I haven’t understood a bar of music in my life, but I have felt it.” – Igor Stravinsky",
+  "“People haven’t always been there for me, but music always has.” – Taylor Swift",
+  "“Music doesn’t lie. If there is something to be changed in this world, then it can only happen through music.” – Jimi Hendrix",
+  "“Music can name the unnameable and communicate the unknowable.” – Leonard Bernstein",
+  "“Music touches us emotionally, where words alone can’t.” – Johnny Depp",
+  "“Music is an outburst of the soul.” – Frederick Delius"
 ];
 
 /**
