@@ -32,6 +32,7 @@ import Reveal from '@/components/shared/reveal';
 import CommandGrid from '@/components/shared/home/commandGrid';
 import HeroMetrics from '@/components/shared/home/heroMetrics';
 import LanguagesCard from '@/components/shared/home/languagesCard';
+import NowPlaying from '@/components/shared/home/nowPlaying';
 import NowPlayingMock from '@/components/shared/home/nowPlayingMock';
 import CommandGridSkeleton from '@/components/skeletons/commandGridSkeleton';
 import LanguagesCardSkeleton from '@/components/skeletons/languagesCardSkeleton';
@@ -206,7 +207,11 @@ const Page: NextPage = async () => {
 
 						<div className="mt-10 grid items-center gap-12 lg:grid-cols-2">
 							<Reveal>
-								<NowPlayingMock />
+								{/* The example stands in while the live read resolves, so the
+								    section keeps its height either way. */}
+								<Suspense fallback={<NowPlayingMock initialData={null} />}>
+									<NowPlaying />
+								</Suspense>
 							</Reveal>
 
 							<Reveal delay={0.08}>
