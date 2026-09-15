@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
 	ArrowRight,
+	AudioLines,
 	Disc3,
 	Headphones,
 	ListMusic,
@@ -13,8 +14,9 @@ import {
 } from 'lucide-react';
 
 import { livePosition, useNow, useRealtimeStats } from '@/hooks/use-realtime-stats';
+import { cn } from '@/lib/utils';
 import { StatsRealtime, StatsRealtimeTrack } from '@/types';
-import { formatSourceName, formatTime } from '@/utils/format';
+import { formatTime } from '@/utils/format';
 
 /**
  * What Pepper puts in the channel after `/play` — using a track that is really
@@ -25,9 +27,15 @@ import { formatSourceName, formatTime } from '@/utils/format';
  * rarely ends inside thirty seconds. When nothing is playing, or the bot cannot
  * be reached, it falls back to the illustrative example below. That state never
  * carries the Live badge, so it cannot pass for a reading.
+ *
+ * The controls browse what is playing across Pepper; they only change what this
+ * card shows. Nothing here can reach a real player — these are other people's
+ * servers.
  */
 
 const POLL_INTERVAL_MS = 30_000;
+/** How long Loop lingers on each song before moving to the next. */
+const LOOP_INTERVAL_MS = 12_000;
 
 /** Placeholder copy for the fallback; not a real response. */
 const example = {
@@ -41,23 +49,11 @@ const example = {
 
 const trackKey = (track: StatsRealtimeTrack) => `${track.guildId}:${track.uri}`;
 
-/**
- * Keeps showing the current track while it is still playing, so a poll does not
- * swap it mid-song; otherwise features the one with the most people listening.
- */
-const pickTrack = (
-	tracks: StatsRealtimeTrack[],
-	currentKey: string | null
-): StatsRealtimeTrack | null => {
-	const playing = tracks.filter((track) => track.playing && !track.paused);
-	return (
-		playing.find((track) => trackKey(track) === currentKey) ??
-		[...playing].sort(
-			(a, b) => b.listeners - a.listeners || a.guildId.localeCompare(b.guildId)
-		)[0] ??
-		null
-	);
-};
+const isPlaying = (track: StatsRealtimeTrack) => track.playing && !track.paused;
+
+/** Busiest first; the guild id only breaks ties, so the order holds still between renders. */
+const byListeners = (a: StatsRealtimeTrack, b: StatsRealtimeTrack) =>
+	b.listeners - a.listeners || a.guildId.localeCompare(b.guildId);
 
 const Equalizer = () => (
 	<span aria-hidden className="flex h-4 shrink-0 items-end gap-[3px]">
@@ -74,9 +70,10 @@ const Equalizer = () => (
 const Vinyl = ({ spinning = false }: { spinning?: boolean }) => (
 	<span
 		aria-hidden
-		className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--pepper-face)] ring-1 ring-inset ring-foreground/10 ${
-			spinning ? 'motion-safe:animate-[spin_6s_linear_infinite]' : ''
-		}`}
+		className={cn(
+			'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--pepper-face)] ring-1 ring-inset ring-foreground/10',
+			spinning && 'motion-safe:animate-[spin_6s_linear_infinite]'
+		)}
 	>
 		<span className="absolute inset-[7px] rounded-full border border-white/15" />
 		<span className="absolute inset-[13px] rounded-full border border-white/10" />
@@ -84,23 +81,61 @@ const Vinyl = ({ spinning = false }: { spinning?: boolean }) => (
 	</span>
 );
 
+const controlClass =
+	'inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-foreground/80 outline-none transition-colors hover:border-foreground/25 hover:bg-surface-hover hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-45';
+
+const activeControlClass =
+	'border-[var(--pepper-red)]/45 bg-[var(--pepper-red)]/10 text-[var(--pepper-red)] hover:border-[var(--pepper-red)]/60 hover:bg-[var(--pepper-red)]/15 hover:text-[var(--pepper-red)]';
+
 const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) => {
 	const { data, fetchedAt } = useRealtimeStats(initialData, POLL_INTERVAL_MS);
-	const currentKey = React.useRef<string | null>(null);
-	const track = data ? pickTrack(data.nowPlaying, currentKey.current) : null;
-	// The example never moves, so there is nothing to tick for.
-	const now = useNow(track ? 1000 : null);
+	const [currentKey, setCurrentKey] = React.useState<string | null>(null);
+	const [looping, setLooping] = React.useState(false);
+	const [queueOpen, setQueueOpen] = React.useState(false);
+	const queueId = React.useId();
 
+	const playing = data ? data.nowPlaying.filter(isPlaying).sort(byListeners) : [];
+	// The example never moves, so there is nothing to tick for.
+	const now = useNow(playing.length ? 1000 : null);
+	const elapsedMs = Math.max(now - fetchedAt, 0);
+
+	// A song that has run out since the last poll drops off, so the card moves on
+	// instead of parking on a full bar — unless every song has, in which case the
+	// last reading beats flashing the example until the next poll.
+	const unfinished = playing.filter(
+		(track) => !track.duration || livePosition(track, elapsedMs) < track.duration
+	);
+	const queue = unfinished.length ? unfinished : playing;
+	const track = queue.find((item) => trackKey(item) === currentKey) ?? queue[0] ?? null;
+	const trackIndex = track ? queue.indexOf(track) : -1;
+	const canSkip = queue.length > 1;
+
+	// Remember what is on screen, so a poll that reorders the list does not swap
+	// it mid-song.
 	React.useEffect(() => {
-		currentKey.current = track ? trackKey(track) : null;
+		const key = track ? trackKey(track) : null;
+		if (key !== currentKey) setCurrentKey(key);
+	}, [track, currentKey]);
+
+	const skip = () => {
+		if (!canSkip) return;
+		setCurrentKey(trackKey(queue[(trackIndex + 1) % queue.length]));
+	};
+
+	const skipRef = React.useRef(skip);
+	React.useEffect(() => {
+		skipRef.current = skip;
 	});
 
-	const liveCount = data
-		? data.nowPlaying.filter((item) => item.playing && !item.paused).length
-		: 0;
-	const position = track
-		? livePosition(track, Math.max(now - fetchedAt, 0))
-		: example.positionMs;
+	// Loop moves on after a while on each song. Keyed on the song too, so a manual
+	// skip or pick restarts the wait instead of cutting the next song short.
+	React.useEffect(() => {
+		if (!looping || !canSkip) return;
+		const timer = setTimeout(() => skipRef.current(), LOOP_INTERVAL_MS);
+		return () => clearTimeout(timer);
+	}, [looping, canSkip, currentKey]);
+
+	const position = track ? livePosition(track, elapsedMs) : example.positionMs;
 	const duration = track ? track.duration : example.durationMs;
 	const percentage = duration ? Math.min((position / duration) * 100, 100) : 0;
 
@@ -137,6 +172,12 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 			<div className="p-4">
 				<p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
 					Now playing
+					{canSkip && (
+						<span className="text-muted-foreground/70">
+							{' '}
+							· {trackIndex + 1} of {queue.length}
+						</span>
+					)}
 				</p>
 
 				<div className="mt-3 flex items-center gap-3.5">
@@ -148,6 +189,7 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 							</span>
 							<span className="absolute left-0 top-0 h-12 w-12 overflow-hidden rounded-md shadow-md ring-1 ring-foreground/10">
 								<Image
+									key={track.artworkUrl}
 									src={track.artworkUrl}
 									alt=""
 									fill
@@ -199,13 +241,15 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 					</div>
 				</div>
 
-				{/* Scrubber */}
+				{/* Scrubber. Width only animates while a song plays through; a skip
+				    jumps straight to the new song's position. */}
 				<div className="mt-4">
 					<div
 						aria-hidden
 						className="h-1 overflow-hidden rounded-full bg-surface-strong"
 					>
 						<div
+							key={track ? trackKey(track) : 'example'}
 							className="h-full rounded-full bg-[var(--pepper-red)] transition-[width] duration-1000 ease-linear"
 							style={{ width: `${percentage}%` }}
 						/>
@@ -219,31 +263,131 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 
 			{/* Controls */}
 			<div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3">
-				{[
-					{ icon: <SkipForward className="h-3.5 w-3.5" />, label: 'Skip' },
-					{ icon: <Repeat2 className="h-3.5 w-3.5" />, label: 'Loop' },
-					{ icon: <ListMusic className="h-3.5 w-3.5" />, label: 'Queue' },
-				].map((control) => (
-					<span
-						key={control.label}
-						className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[12px] font-medium text-foreground/80"
-					>
-						{control.icon}
-						{control.label}
-					</span>
-				))}
+				<button
+					type="button"
+					onClick={skip}
+					disabled={!canSkip}
+					title={
+						canSkip
+							? 'Show the next song playing on Pepper'
+							: 'Nothing else is playing right now'
+					}
+					className={controlClass}
+				>
+					<SkipForward className="h-3.5 w-3.5" />
+					Skip
+				</button>
+				<button
+					type="button"
+					onClick={() => setLooping((value) => !value)}
+					disabled={!canSkip}
+					aria-pressed={looping && canSkip}
+					title="Cycle through every song playing on Pepper"
+					className={cn(controlClass, looping && canSkip && activeControlClass)}
+				>
+					<Repeat2 className="h-3.5 w-3.5" />
+					Loop
+				</button>
+				<button
+					type="button"
+					onClick={() => setQueueOpen((value) => !value)}
+					aria-expanded={queueOpen}
+					aria-controls={queueId}
+					title="See everything playing on Pepper"
+					className={cn(controlClass, queueOpen && activeControlClass)}
+				>
+					<ListMusic className="h-3.5 w-3.5" />
+					Queue
+					{queue.length > 0 && (
+						<span className="font-mono tabular-nums opacity-70">{queue.length}</span>
+					)}
+				</button>
 				{track ? (
 					<Link
 						href="/stats"
 						className="group ml-auto inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:text-foreground"
 					>
-						{liveCount} playing now
+						Live stats
 						<ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
 					</Link>
 				) : (
 					<span className="ml-auto font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
 						{example.source}
 					</span>
+				)}
+			</div>
+
+			{/* Queue */}
+			<div id={queueId} hidden={!queueOpen} className="border-t border-border">
+				{queue.length ? (
+					<>
+						<p className="px-4 pb-1 pt-3 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+							Playing across Pepper · pick one to show it
+						</p>
+						<ol className="max-h-60 overflow-y-auto pb-1.5">
+							{queue.map((item, index) => {
+								const active = item === track;
+								return (
+									<li key={trackKey(item)}>
+										<button
+											type="button"
+											onClick={() => setCurrentKey(trackKey(item))}
+											aria-current={active || undefined}
+											className={cn(
+												'flex w-full items-center gap-3 px-4 py-2 text-left outline-none transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover',
+												active && 'bg-surface-hover'
+											)}
+										>
+											<span className="flex w-5 shrink-0 justify-end font-mono text-[11px] tabular-nums text-muted-foreground">
+												{active ? (
+													<AudioLines className="h-3.5 w-3.5 text-[var(--pepper-red)]" />
+												) : (
+													index + 1
+												)}
+											</span>
+											<span className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-surface-strong">
+												{item.artworkUrl ? (
+													<Image
+														src={item.artworkUrl}
+														alt=""
+														fill
+														sizes="32px"
+														className="object-cover"
+													/>
+												) : (
+													<Disc3 className="absolute inset-0 m-auto h-3.5 w-3.5 text-foreground/45" />
+												)}
+											</span>
+											<span className="min-w-0 flex-1">
+												<span className="block truncate text-[13px] font-medium text-foreground">
+													{item.title}
+												</span>
+												<span className="block truncate text-[12px] text-muted-foreground">
+													{item.author}
+												</span>
+											</span>
+											<span className="inline-flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground">
+												<Headphones className="h-3 w-3" />
+												{item.listeners}
+											</span>
+										</button>
+									</li>
+								);
+							})}
+						</ol>
+					</>
+				) : (
+					<p className="px-4 py-4 text-[13px] leading-relaxed text-muted-foreground">
+						{data
+							? 'Nothing is playing on Pepper right now — this is an example of what it looks like.'
+							: "Live data isn't available right now — this is an example of what it looks like."}{' '}
+						<Link
+							href="/stats"
+							className="font-medium text-foreground/80 underline decoration-foreground/35 underline-offset-4 hover:decoration-foreground"
+						>
+							See live stats
+						</Link>
+					</p>
 				)}
 			</div>
 		</div>
