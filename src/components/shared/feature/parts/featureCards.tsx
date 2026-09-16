@@ -1,4 +1,4 @@
-import { Award, Clock, ListMusic, Music, Server, Zap } from 'lucide-react';
+import { Clock, ListMusic, Music, Radio, Server, Zap } from 'lucide-react';
 
 import { Cell, CellGrid, IconChip } from '@/components/shared/page/parts';
 
@@ -22,16 +22,16 @@ const FeatureCardContent = [
 			'Build playlists with /playlist, keep them private, or share a code anyone can paste into /play.',
 	},
 	{
-		icon: <Zap className="h-4 w-4" />,
-		title: 'Fast & Reliable',
+		icon: <Radio className="h-4 w-4" />,
+		title: 'Live Radio',
 		description:
-			'Lightning-fast song loading and stable 24/7 uptime for uninterrupted music sessions.',
+			'Tune into a live station with /radio — hand-picked, tested stations or thousands more from the Radio Browser directory, by name, genre or country.',
 	},
 	{
-		icon: <Award className="h-4 w-4" />,
-		title: 'Premium Audio Quality',
+		icon: <Zap className="h-4 w-4" />,
+		title: 'Fast & Clear',
 		description:
-			'Crystal-clear sound with high-bitrate streaming and minimal buffering.',
+			'Lightning-fast loading and high-bitrate audio with minimal buffering, around the clock.',
 	},
 	{
 		icon: <Clock className="h-4 w-4" />,

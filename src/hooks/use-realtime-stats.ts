@@ -3,6 +3,7 @@
 import React from 'react';
 
 import { StatsRealtime, StatsRealtimeTrack } from '@/types';
+import { isLiveDuration } from '@/utils/format';
 
 /** Backoff ceiling once the endpoint starts refusing us. */
 const MAX_POLL_INTERVAL_MS = 120_000;
@@ -127,9 +128,19 @@ export const useNow = (intervalMs: number | null = 1000): number => {
 	return now;
 };
 
-/** Position reported by the bot plus the time elapsed since that snapshot. */
+/**
+ * Position reported by the bot plus the time elapsed since that snapshot. A live
+ * stream has no end to clamp to, so it just keeps counting time on air.
+ */
 export const livePosition = (track: StatsRealtimeTrack, elapsedMs: number): number => {
 	if (!track.playing || track.paused) return track.position;
-	if (!track.duration) return track.position;
+	if (isLiveDuration(track.duration)) return track.position + elapsedMs;
 	return Math.min(track.position + elapsedMs, track.duration);
 };
+
+/**
+ * How long a live stream has been on. A radio station counts from when it was
+ * started, so a dropped stream that reconnects does not reset the clock.
+ */
+export const onAirTime = (track: StatsRealtimeTrack, elapsedMs: number): number =>
+	track.radio ? track.radio.onAirMs + elapsedMs : livePosition(track, elapsedMs);

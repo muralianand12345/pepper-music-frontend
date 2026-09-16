@@ -7,13 +7,15 @@ interface Props {}
 export const metadata: Metadata = {
 	title: 'Features | How Pepper Enhances Your Discord Experience',
 	description:
-		'Every Pepper feature in one place — voice channel playback, custom playlists, autoplay, DJ permissions, audio filters, lyrics, listening stats and a command reference read live from the bot in every language it speaks.',
+		'Every Pepper feature in one place — voice channel playback, live radio, custom playlists, autoplay, DJ permissions, audio filters, lyrics, listening stats and a command reference read live from the bot in every language it speaks.',
 	keywords: [
 		'Discord music bot features',
 		'Pepper music bot',
 		'Discord voice channel music',
 		'multi-server music bot',
 		'Discord bot custom playlists',
+		'Discord radio bot',
+		'live radio in Discord voice channel',
 		'fast reliable music bot',
 		'premium audio quality',
 		'queue management',

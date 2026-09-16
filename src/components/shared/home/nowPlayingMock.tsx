@@ -13,10 +13,21 @@ import {
 	SkipForward,
 } from 'lucide-react';
 
-import { livePosition, useNow, useRealtimeStats } from '@/hooks/use-realtime-stats';
+import StationArt, { VerifiedStationMark } from '@/components/shared/stationArt';
+import {
+	livePosition,
+	onAirTime,
+	useNow,
+	useRealtimeStats,
+} from '@/hooks/use-realtime-stats';
 import { cn } from '@/lib/utils';
 import { StatsRealtime, StatsRealtimeTrack } from '@/types';
-import { formatTime } from '@/utils/format';
+import {
+	formatStreamMetadata,
+	formatTime,
+	isLiveDuration,
+	repairMojibake,
+} from '@/utils/format';
 
 /**
  * What Pepper puts in the channel after `/play` — using a track that is really
@@ -50,6 +61,25 @@ const example = {
 const trackKey = (track: StatsRealtimeTrack) => `${track.guildId}:${track.uri}`;
 
 const isPlaying = (track: StatsRealtimeTrack) => track.playing && !track.paused;
+
+/**
+ * Headline and subtitle for a reading. On radio that is the station, with what
+ * the stream says is on (or the genre) underneath; otherwise the song and artist.
+ */
+const describe = (track: StatsRealtimeTrack) =>
+	track.radio
+		? {
+				title: track.radio.name,
+				link: track.radio.homepage,
+				subtitle:
+					formatStreamMetadata(track.title, track.author, track.radio.name) ??
+					track.radio.genre,
+			}
+		: {
+				title: repairMojibake(track.title),
+				link: track.uri,
+				subtitle: repairMojibake(track.author),
+			};
 
 /** Busiest first; the guild id only breaks ties, so the order holds still between renders. */
 const byListeners = (a: StatsRealtimeTrack, b: StatsRealtimeTrack) =>
@@ -103,7 +133,8 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 	// instead of parking on a full bar — unless every song has, in which case the
 	// last reading beats flashing the example until the next poll.
 	const unfinished = playing.filter(
-		(track) => !track.duration || livePosition(track, elapsedMs) < track.duration
+		(track) =>
+			isLiveDuration(track.duration) || livePosition(track, elapsedMs) < track.duration
 	);
 	const queue = unfinished.length ? unfinished : playing;
 	const track = queue.find((item) => trackKey(item) === currentKey) ?? queue[0] ?? null;
@@ -135,9 +166,17 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 		return () => clearTimeout(timer);
 	}, [looping, canSkip, currentKey]);
 
-	const position = track ? livePosition(track, elapsedMs) : example.positionMs;
+	const radio = track?.radio ?? null;
+	const details = track ? describe(track) : null;
 	const duration = track ? track.duration : example.durationMs;
-	const percentage = duration ? Math.min((position / duration) * 100, 100) : 0;
+	// Radio and other streams report an endless duration: count time on air instead.
+	const live = isLiveDuration(duration);
+	const position = !track
+		? example.positionMs
+		: live
+			? onAirTime(track, elapsedMs)
+			: livePosition(track, elapsedMs);
+	const percentage = live ? 0 : Math.min((position / duration) * 100, 100);
 
 	return (
 		<div className="overflow-hidden rounded-xl border border-border bg-surface">
@@ -150,7 +189,7 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 				{track ? (
 					<>
 						<p className="min-w-0 truncate text-[13px] text-muted-foreground">
-							Playing in a server right now
+							{radio ? 'Streaming radio in a server right now' : 'Playing in a server right now'}
 						</p>
 						<span className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/40 px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-300">
 							<span className="relative flex h-1.5 w-1.5">
@@ -171,7 +210,7 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 			{/* Response */}
 			<div className="p-4">
 				<p className="font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-					Now playing
+					{radio ? 'On air' : 'Now playing'}
 					{canSkip && (
 						<span className="text-muted-foreground/70">
 							{' '}
@@ -181,7 +220,13 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 				</p>
 
 				<div className="mt-3 flex items-center gap-3.5">
-					{track?.artworkUrl ? (
+					{radio ? (
+						// A station has no record to spin — just its logo.
+						<StationArt
+							src={radio.artworkUrl ?? track?.artworkUrl}
+							className="size-12 rounded-md"
+						/>
+					) : track?.artworkUrl ? (
 						// The record slides out from behind the sleeve and turns while it plays.
 						<span className="relative h-12 w-[4.5rem] shrink-0">
 							<span className="absolute right-0 top-0">
@@ -204,26 +249,27 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 
 					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2.5">
-							{track?.uri ? (
+							{details?.link ? (
 								<a
-									href={track.uri}
+									href={details.link}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground transition-colors hover:text-muted-foreground"
 								>
-									{track.title}
+									{details.title}
 								</a>
 							) : (
 								<p className="truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
-									{track ? track.title : example.title}
+									{details ? details.title : example.title}
 								</p>
 							)}
+							{radio?.source === 'curated' && <VerifiedStationMark />}
 							<Equalizer />
 						</div>
 						<p className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[13px] text-muted-foreground">
-							{track ? (
+							{track && details ? (
 								<>
-									<span className="truncate">{track.author}</span>
+									<span className="truncate">{details.subtitle}</span>
 									{track.listeners > 0 && (
 										<>
 											<span aria-hidden>·</span>
@@ -255,8 +301,8 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 						/>
 					</div>
 					<div className="mt-2 flex items-center justify-between font-mono text-[11px] tabular-nums text-muted-foreground">
-						<span>{formatTime(position)}</span>
-						<span>{duration ? formatTime(duration) : 'Live'}</span>
+						<span>{live ? `${formatTime(position)} on air` : formatTime(position)}</span>
+						<span>{radio ? 'Radio' : live ? 'Live' : formatTime(duration)}</span>
 					</div>
 				</div>
 			</div>
@@ -327,6 +373,7 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 						<ol className="max-h-60 overflow-y-auto pb-1.5">
 							{queue.map((item, index) => {
 								const active = item === track;
+								const itemDetails = describe(item);
 								return (
 									<li key={trackKey(item)}>
 										<button
@@ -345,25 +392,33 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 													index + 1
 												)}
 											</span>
-											<span className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-surface-strong">
-												{item.artworkUrl ? (
-													<Image
-														src={item.artworkUrl}
-														alt=""
-														fill
-														sizes="32px"
-														className="object-cover"
-													/>
-												) : (
-													<Disc3 className="absolute inset-0 m-auto h-3.5 w-3.5 text-foreground/45" />
-												)}
-											</span>
+											{item.radio ? (
+												<StationArt
+													src={item.radio.artworkUrl ?? item.artworkUrl}
+													className="size-8"
+													iconClassName="h-3.5 w-3.5"
+												/>
+											) : (
+												<span className="relative h-8 w-8 shrink-0 overflow-hidden rounded bg-surface-strong">
+													{item.artworkUrl ? (
+														<Image
+															src={item.artworkUrl}
+															alt=""
+															fill
+															sizes="32px"
+															className="object-cover"
+														/>
+													) : (
+														<Disc3 className="absolute inset-0 m-auto h-3.5 w-3.5 text-foreground/45" />
+													)}
+												</span>
+											)}
 											<span className="min-w-0 flex-1">
 												<span className="block truncate text-[13px] font-medium text-foreground">
-													{item.title}
+													{itemDetails.title}
 												</span>
 												<span className="block truncate text-[12px] text-muted-foreground">
-													{item.author}
+													{item.radio ? `Radio · ${itemDetails.subtitle}` : itemDetails.subtitle}
 												</span>
 											</span>
 											<span className="inline-flex shrink-0 items-center gap-1 text-[12px] text-muted-foreground">

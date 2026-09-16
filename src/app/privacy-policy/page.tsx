@@ -35,7 +35,7 @@ interface Props {}
 export const metadata: Metadata = {
 	title: 'Privacy Policy | How Pepper Music Bot Handles Your Data',
 	description:
-		'How Pepper Music Bot collects, uses, stores and deletes your data — Discord identifiers, listening history, connected Spotify accounts, public stats and your rights.',
+		'How Pepper Music Bot collects, uses, stores and deletes your data — Discord identifiers, listening history, radio listening, connected Spotify accounts, public stats and your rights.',
 	keywords: [
 		'Pepper privacy policy',
 		'Discord bot privacy policy',
@@ -60,7 +60,7 @@ const highlights: LegalHighlight[] = [
 	{
 		icon: <Music4 className="h-4 w-4" />,
 		title: 'Music data, not messages',
-		body: 'Pepper stores the tracks you play. It does not read, store or scan your chat messages.',
+		body: 'Pepper stores the tracks and radio stations you play. It does not read, store or scan your chat messages.',
 	},
 	{
 		icon: <UserCheck className="h-4 w-4" />,
@@ -136,6 +136,13 @@ const sections: LegalSection[] = [
 								'Track title, artist, duration, ISRC, source platform, artwork URL, track link, play count and the time it was played — recorded per user and per server.',
 							purpose:
 								'To power the /chart command, queue features and aggregate statistics.',
+						},
+						{
+							label: 'Radio listening',
+							detail:
+								'If you use /radio: each station’s ID, name, genre, country, stream link, logo, audio format and whether it is a verified or directory station, with how many times it was started, how long it stayed on, how often its stream dropped or failed, when it was first and last played, and who last started it — recorded per user and per server.',
+							purpose:
+								'To rank stations on our statistics page and spot stations whose streams keep failing. Radio is kept apart from your listening history, so it never affects /chart.',
 						},
 						{
 							label: 'Custom playlists',
@@ -291,8 +298,9 @@ const sections: LegalSection[] = [
 			<Prose>
 				<p>
 					Our website publishes aggregate statistics about Pepper — total tracks
-					played, popular songs and artists, active servers and a live view of
-					what is currently playing across the network.
+					played, popular songs and artists, the most played radio stations,
+					active servers and a live view of what is currently playing across the
+					network.
 				</p>
 				<Note title="Worth knowing">
 					The &quot;top requesters&quot; leaderboard shows{' '}
@@ -308,6 +316,12 @@ const sections: LegalSection[] = [
 					username and avatar as its owner. Private playlists are only counted;
 					nothing else about them is published. Make a playlist private again
 					and it drops off the page within a few minutes.
+				</Note>
+				<Note title="Radio stations">
+					The radio leaderboard shows <Term>stations only</Term> — name, genre,
+					country, logo, how many times each was started and how long it has
+					played, added up across every server. It never shows who listened or
+					in which server.
 				</Note>
 				<p>
 					Server-level statistics are keyed by server ID and reflect what was
@@ -335,14 +349,24 @@ const sections: LegalSection[] = [
 							privacy policy.
 						</>,
 						<>
-							<Term>Music platforms</Term> — our audio servers fetch the track
-							itself from the source platform. Those platforms see a request
-							from our infrastructure, not from you.
+							<Term>Music platforms and radio stations</Term> — our audio
+							servers fetch the track or live stream itself from its source.
+							Those sources see a request from our infrastructure, not from
+							you.
 						</>,
 						<>
 							<Term>Spotify</Term> — contacted only when you have linked an
 							account, and only to read your playlists.
 						</>,
+						<>
+							<Term>Radio Browser</Term> — the public station directory behind{' '}
+							<Term>/radio</Term>. It receives the text you type into{' '}
+							<Term>/radio</Term> (as you type, to suggest stations), your
+							server&apos;s region to put local stations first, and a play count
+							when one of its stations is started. These requests come from our
+							servers and carry no Discord identifier.
+						</>,
+
 						<>
 							<Term>Database and hosting providers</Term> — store the data
 							described in this policy on our behalf under their own security
@@ -385,6 +409,11 @@ const sections: LegalSection[] = [
 						<>
 							<Term>Spotify tokens</Term> are deleted immediately when you run{' '}
 							<Term>/logout</Term>.
+						</>,
+						<>
+							<Term>Radio listening</Term> is kept on the same terms as
+							listening history, because it powers the radio statistics on this
+							site.
 						</>,
 						<>
 							<Term>Custom playlists</Term> are kept until you delete them with{' '}
@@ -543,8 +572,8 @@ const PrivacyPolicy: NextPage<Props> = ({}) => {
 			eyebrow="Legal"
 			title="Privacy Policy"
 			summary="What Pepper stores when you play music on Discord, why it stores it, who else sees it, and how to have it removed."
-			updated="September 14, 2026"
-			effective="September 14, 2026"
+			updated="September 16, 2026"
+			effective="September 16, 2026"
 			highlights={highlights}
 			sections={sections}
 			related={{

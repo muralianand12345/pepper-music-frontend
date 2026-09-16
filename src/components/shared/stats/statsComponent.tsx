@@ -3,6 +3,7 @@ import { getStatsBundle, TOP_PLAYLIST_COUNT } from '@/lib/stats-api';
 import StatsInsights from './parts/statsInsights';
 import StatsMusicPage from './parts/statsMusic';
 import StatsPlaylistsCard from './parts/statsPlaylists';
+import StatsRadioCard from './parts/statsRadio';
 import StatsRealtimeCard from './parts/statsRealtime';
 import StatsRequestersCard from './parts/statsRequesters';
 import StatsServersCard from './parts/statsServers';
@@ -15,6 +16,7 @@ const StatsComponent: React.FC = async () => {
 		servers: 10,
 		// Must match the list the playlist route checks codes against.
 		playlists: TOP_PLAYLIST_COUNT,
+		radio: 10,
 	});
 
 	return (
@@ -29,6 +31,7 @@ const StatsComponent: React.FC = async () => {
 				<StatsMusicPage songs={stats.songs} />
 				<StatsRequestersCard requesters={stats.requesters} />
 				<StatsPlaylistsCard playlists={stats.playlists} />
+				<StatsRadioCard radio={stats.radio} />
 				<StatsServersCard servers={stats.servers} />
 			</div>
 		</div>

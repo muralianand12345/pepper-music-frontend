@@ -121,9 +121,9 @@ const sections: LegalSection[] = [
 			<Prose>
 				<p>
 					Pepper is a Discord music bot. It searches for tracks, streams audio
-					into voice channels, manages queues and filters, offers autoplay
-					recommendations, shows listening statistics and lyrics, and can be
-					localised into the languages it supports.
+					and live radio into voice channels, manages queues and filters, offers
+					autoplay recommendations, shows listening statistics and lyrics, and
+					can be localised into the languages it supports.
 				</p>
 				<Note title="No YouTube">
 					Pepper does not stream from YouTube or YouTube Music — YouTube's terms
@@ -248,7 +248,10 @@ const sections: LegalSection[] = [
 				</p>
 				<p>
 					Lyrics, artwork and metadata are supplied by third parties and may be
-					inaccurate, incomplete or unavailable. We do not warrant any of it. If
+					inaccurate, incomplete or unavailable. We do not warrant any of it.
+					The same goes for radio: stations are run by their broadcasters, and
+					directory listings are submitted by the public, so a station may go
+					offline, change what it plays, or not match its listing. If
 					you believe content accessible through Pepper infringes your rights,
 					contact us and we will act on valid reports.
 				</p>
@@ -451,8 +454,8 @@ const TermsOfService: NextPage<Props> = ({}) => {
 			eyebrow="Legal"
 			title="Terms of Service"
 			summary="The agreement between you and Pepper: who can use the Bot, how it may be used, what we promise, and what we do not."
-			updated="September 14, 2026"
-			effective="September 14, 2026"
+			updated="September 16, 2026"
+			effective="September 16, 2026"
 			highlights={highlights}
 			sections={sections}
 			related={{

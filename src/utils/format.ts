@@ -1,14 +1,18 @@
 /**
- * Formats milliseconds into a time string in the format "m:ss"
+ * Formats milliseconds as "m:ss", or "h:mm:ss" from an hour up — a radio
+ * station can stay on for a whole day.
  */
 export const formatTime = (milliseconds: number): string => {
-	if (!milliseconds && milliseconds !== 0) return '0:00';
+	if (!Number.isFinite(milliseconds) || milliseconds < 0) return '0:00';
 
-	const seconds = milliseconds / 1000;
-	const mins = Math.floor(seconds / 60);
-	const secs = Math.floor(seconds % 60);
+	const totalSeconds = Math.floor(milliseconds / 1000);
+	const hours = Math.floor(totalSeconds / 3600);
+	const mins = Math.floor((totalSeconds % 3600) / 60);
+	const secs = (totalSeconds % 60).toString().padStart(2, '0');
 
-	return `${mins}:${secs.toString().padStart(2, '0')}`;
+	return hours
+		? `${hours}:${mins.toString().padStart(2, '0')}:${secs}`
+		: `${mins}:${secs}`;
 };
 
 const MS = {
@@ -100,6 +104,56 @@ export const formatSourceName = (source: string | null | undefined): string => {
 };
 
 /**
+ * ISO country code -> "India". Falls back to the code itself for anything the
+ * runtime does not recognise, since radio directory data is user-submitted.
+ */
+export const formatCountry = (code: string | null | undefined): string | null => {
+	if (!code) return null;
+	try {
+		return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) ?? code;
+	} catch {
+		return code;
+	}
+};
+
+/**
+ * Undoes UTF-8 text that was read as Latin-1 somewhere upstream — stream
+ * metadata often arrives as "ÄÃ i PhÃ¡t" instead of "Đài Phát". Only a string
+ * made entirely of Latin-1 code points that decodes as valid UTF-8 is changed,
+ * so ordinary accented titles ("Café") come back untouched.
+ */
+export const repairMojibake = (value: string): string => {
+	if (!/[\u00C2-\u00F4][\u0080-\u00BF]/.test(value) || /[^\u0000-\u00FF]/.test(value)) {
+		return value;
+	}
+	try {
+		const bytes = Uint8Array.from(value, (char) => char.charCodeAt(0));
+		return new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+	} catch {
+		return value;
+	}
+};
+
+/** Lavalink's stand-ins for a stream that sent no metadata. */
+const PLACEHOLDER_METADATA = /^unknown(?: title| artist)?$/i;
+
+/**
+ * What a radio stream says is on, e.g. "eclipse — Sport3000". Null when all it
+ * sends is the station's own name or Lavalink's "Unknown title" placeholders.
+ */
+export const formatStreamMetadata = (
+	title: string | null | undefined,
+	author: string | null | undefined,
+	stationName: string
+): string | null => {
+	const station = stationName.trim().toLowerCase();
+	const parts = [title, author]
+		.map((part) => repairMojibake(part?.trim() ?? ''))
+		.filter((part) => part && !PLACEHOLDER_METADATA.test(part) && part.toLowerCase() !== station);
+	return parts.length ? [...new Set(parts)].join(' — ') : null;
+};
+
+/**
  * Uptime in milliseconds -> "4d 6h 12m".
  */
 export const formatUptime = (milliseconds: number): string => {
@@ -120,6 +174,14 @@ export const formatUptime = (milliseconds: number): string => {
  * longer than this is poisoned by them rather than real listening time.
  */
 export const MAX_PLAUSIBLE_TRACK_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * True for a live stream — a radio station or any other endless source. Lavalink
+ * reports those as `Long.MAX_VALUE` (or 0), which must never be shown as a
+ * length or used to fill a progress bar.
+ */
+export const isLiveDuration = (durationMs: number | null | undefined): boolean =>
+	!durationMs || !Number.isFinite(durationMs) || durationMs > MAX_PLAUSIBLE_TRACK_MS;
 
 /**
  * Guards the `estimatedPlaytimeMs` totals the stats API reports. The bot sums

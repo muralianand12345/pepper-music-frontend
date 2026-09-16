@@ -106,6 +106,7 @@ export const fallbackCommands = [
 	{ name: 'play', description: 'Search or paste a link and start playing instantly.', category: 'music' },
 	{ name: 'queue', description: 'See what is lined up next and jump around it.', category: 'music' },
 	{ name: 'playlist', description: 'Build your own playlists and share them by code.', category: 'music' },
+	{ name: 'radio', description: 'Stream a live radio station by name, genre or link.', category: 'music' },
 	{ name: 'autoplay', description: 'Keep the music going once the queue runs dry.', category: 'music' },
 	{ name: 'lyrics', description: 'Pull up the lyrics for the track that is playing.', category: 'music' },
 	{ name: 'chart', description: 'Your top tracks, artists and listening time.', category: 'music' },
@@ -167,6 +168,7 @@ export const statsSections = [
 	{ id: 'songs', label: 'Top songs' },
 	{ id: 'requesters', label: 'Top requesters' },
 	{ id: 'playlists', label: 'Playlists' },
+	{ id: 'radio', label: 'Radio' },
 	{ id: 'servers', label: 'Servers' },
 ];
 

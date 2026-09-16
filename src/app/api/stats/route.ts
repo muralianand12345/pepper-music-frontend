@@ -5,7 +5,7 @@ import { getStatsBundle } from '@/lib/stats-api';
 import { snapLimit } from '@/lib/upstream';
 
 /**
- * The whole stats page in one call. It fans out to seven bot endpoints, each of
+ * The whole stats page in one call. It fans out to eight bot endpoints, each of
  * which aggregates over MongoDB, so this is the most expensive thing we expose:
  * limits are snapped to a step (so `?songs=` cannot be varied to walk past the
  * cache) and the per-IP budget is deliberately small.
@@ -26,6 +26,7 @@ export const GET = async (request: NextRequest) => {
 			playtime: snapLimit(searchParams.get('playtime'), 10),
 			servers: snapLimit(searchParams.get('servers'), 10),
 			playlists: snapLimit(searchParams.get('playlists'), 10),
+			radio: snapLimit(searchParams.get('radio'), 10),
 		});
 		return NextResponse.json(bundle, {
 			headers: { 'Cache-Control': 'public, max-age=30, stale-while-revalidate=120' },

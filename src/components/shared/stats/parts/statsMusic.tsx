@@ -88,7 +88,7 @@ const StatsMusicPage: React.FC<StatsMusicPageProps> = ({ songs }) => {
 											{song.author}
 										</span>
 										<span aria-hidden>·</span>
-										<span>{formatTime(song.duration)}</span>
+										<span>{song.isStream ? 'Live' : formatTime(song.duration)}</span>
 										<span aria-hidden>·</span>
 										<span>{formatSourceName(song.sourceName)}</span>
 										<span aria-hidden>·</span>

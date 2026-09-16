@@ -75,12 +75,12 @@ const depth = [
 	{
 		icon: <Clock3 className="h-4 w-4" />,
 		title: 'Listening stats',
-		body: '/chart shows your top tracks, artists and total listening time, plus the same for your server.',
+		body: '/chart shows your top tracks, artists and total listening time, plus the same for your server. Radio is counted separately, so it never skews them.',
 	},
 	{
 		icon: <Waves className="h-4 w-4" />,
 		title: 'Resilient streams',
-		body: 'If an audio node drops or a stream expires, Pepper refreshes it and resumes from the same position — on servers we run ourselves.',
+		body: 'If an audio node drops or a stream expires, Pepper refreshes it and resumes from the same position — on servers we run ourselves. A radio station that cuts out reconnects on its own.',
 	},
 	{
 		icon: <Languages className="h-4 w-4" />,

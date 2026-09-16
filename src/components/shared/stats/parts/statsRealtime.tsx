@@ -13,13 +13,23 @@ import {
 	WifiOff,
 } from 'lucide-react';
 
-import { livePosition, useNow, useRealtimeStats } from '@/hooks/use-realtime-stats';
+import StationArt, { VerifiedStationMark } from '@/components/shared/stationArt';
+import {
+	livePosition,
+	onAirTime,
+	useNow,
+	useRealtimeStats,
+} from '@/hooks/use-realtime-stats';
 import { StatsRealtime, StatsRealtimeTrack } from '@/types';
 import {
 	formatCompactNumber,
+	formatCountry,
 	formatSourceName,
+	formatStreamMetadata,
 	formatTime,
 	formatUptime,
+	isLiveDuration,
+	repairMojibake,
 } from '@/utils/format';
 
 import { EmptyState, StatsSection } from './section';
@@ -38,47 +48,60 @@ const NowPlayingRow: React.FC<{
 	track: StatsRealtimeTrack;
 	elapsedMs: number;
 }> = ({ track, elapsedMs }) => {
+	const { radio } = track;
 	const position = livePosition(track, elapsedMs);
-	const percentage = track.duration
-		? Math.min((position / track.duration) * 100, 100)
-		: 0;
+	const live = isLiveDuration(track.duration);
+	const percentage = live ? 0 : Math.min((position / track.duration) * 100, 100);
+
+	// On radio the station is the headline and links to its homepage, not the raw
+	// audio stream; whatever the stream says is on sits underneath, when it says.
+	const title = radio ? radio.name : repairMojibake(track.title);
+	const link = radio ? radio.homepage : track.uri;
+	const nowOn = radio ? formatStreamMetadata(track.title, track.author, radio.name) : null;
+	const subtitle = radio ? (nowOn ?? radio.genre) : repairMojibake(track.author);
+	const country = radio ? formatCountry(radio.country) : null;
 
 	return (
 		<div className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-hover">
-			<div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-surface-hover">
-				{track.artworkUrl ? (
-					<Image
-						src={track.artworkUrl}
-						alt={track.title}
-						fill
-						sizes="48px"
-						className="object-cover"
-					/>
-				) : (
-					<Disc3 className="absolute inset-0 m-auto h-5 w-5 text-foreground/45" />
-				)}
-			</div>
+			{radio ? (
+				<StationArt src={radio.artworkUrl ?? track.artworkUrl} className="size-12" />
+			) : (
+				<div className="relative h-12 w-12 shrink-0 overflow-hidden rounded bg-surface-hover">
+					{track.artworkUrl ? (
+						<Image
+							src={track.artworkUrl}
+							alt={track.title}
+							fill
+							sizes="48px"
+							className="object-cover"
+						/>
+					) : (
+						<Disc3 className="absolute inset-0 m-auto h-5 w-5 text-foreground/45" />
+					)}
+				</div>
+			)}
 
 			<div className="min-w-0 flex-1">
 				<div className="flex items-start justify-between gap-3">
 					<div className="min-w-0">
-						{track.uri ? (
-							<a
-								href={track.uri}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="block truncate font-medium text-foreground transition-colors hover:text-muted-foreground"
-							>
-								{track.title}
-							</a>
-						) : (
-							<span className="block truncate font-medium text-foreground">
-								{track.title}
-							</span>
-						)}
-						<p className="truncate text-sm text-muted-foreground/85">
-							{track.author}
-						</p>
+						<div className="flex min-w-0 items-center gap-1.5">
+							{link ? (
+								<a
+									href={link}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="block truncate font-medium text-foreground transition-colors hover:text-muted-foreground"
+								>
+									{title}
+								</a>
+							) : (
+								<span className="block truncate font-medium text-foreground">
+									{title}
+								</span>
+							)}
+							{radio?.source === 'curated' && <VerifiedStationMark />}
+						</div>
+						<p className="truncate text-sm text-muted-foreground/85">{subtitle}</p>
 					</div>
 
 					<div className="flex shrink-0 items-center gap-2">
@@ -89,7 +112,7 @@ const NowPlayingRow: React.FC<{
 									: 'border-emerald-500/40 text-emerald-700 dark:text-emerald-300'
 							}`}
 						>
-							{track.paused ? 'Paused' : 'Playing'}
+							{track.paused ? 'Paused' : radio ? 'On air' : 'Playing'}
 						</span>
 						<span className="flex items-center gap-1 text-xs text-muted-foreground/85">
 							<Headphones className="h-3 w-3" />
@@ -98,23 +121,66 @@ const NowPlayingRow: React.FC<{
 					</div>
 				</div>
 
+				{/* A stream has no end, so there is nothing for the bar to fill towards. */}
 				<div className="mt-2 h-1 overflow-hidden rounded-full bg-border">
-					<div
-						className="h-full rounded-full bg-foreground/70"
-						style={{ width: `${percentage}%` }}
-					/>
+					{!live && (
+						<div
+							className="h-full rounded-full bg-foreground/70"
+							style={{ width: `${percentage}%` }}
+						/>
+					)}
 				</div>
 
 				<div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground/85">
-					<span className="font-mono tabular-nums">
-						{formatTime(position)} / {formatTime(track.duration)}
-					</span>
-					<span aria-hidden>·</span>
-					<span>{formatSourceName(track.sourceName)}</span>
-					{track.queueSize > 0 && (
+					{radio ? (
 						<>
+							<span className="inline-flex items-center gap-1.5">
+								<Radio aria-hidden className="h-3 w-3 text-foreground/80" />
+								<span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-foreground/80">
+									Radio
+								</span>
+								<span className="font-mono tabular-nums">
+									{formatTime(onAirTime(track, elapsedMs))} on air
+								</span>
+							</span>
+							{/* The genre is already the subtitle when the stream sends no metadata. */}
+							{nowOn && (
+								<>
+									<span aria-hidden>·</span>
+									<span>{radio.genre}</span>
+								</>
+							)}
+							{country && (
+								<>
+									<span aria-hidden>·</span>
+									<span>{country}</span>
+								</>
+							)}
+						</>
+					) : (
+						<>
+							{live ? (
+								<span className="inline-flex items-center gap-1.5">
+									<span className="font-mono text-[10px] font-medium uppercase tracking-[0.14em] text-foreground/80">
+										Live
+									</span>
+									<span className="font-mono tabular-nums">
+										{formatTime(position)} on air
+									</span>
+								</span>
+							) : (
+								<span className="font-mono tabular-nums">
+									{formatTime(position)} / {formatTime(track.duration)}
+								</span>
+							)}
 							<span aria-hidden>·</span>
-							<span>{track.queueSize} in queue</span>
+							<span>{formatSourceName(track.sourceName)}</span>
+							{track.queueSize > 0 && (
+								<>
+									<span aria-hidden>·</span>
+									<span>{track.queueSize} in queue</span>
+								</>
+							)}
 						</>
 					)}
 					{track.requester?.username && (
@@ -161,6 +227,7 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 		? data.nowPlaying
 		: data.nowPlaying.slice(0, INITIAL_VISIBLE_TRACKS);
 	const hiddenCount = data.nowPlaying.length - tracks.length;
+	const onRadio = data.nowPlaying.filter((track) => track.radio).length;
 
 	return (
 		<StatsSection
@@ -199,7 +266,9 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 					icon={<Disc3 className="h-4 w-4" />}
 					label="Active players"
 					value={String(data.playing)}
-					hint={`${data.paused} paused · ${data.idle} idle`}
+					hint={`${data.paused} paused · ${data.idle} idle${
+						onRadio ? ` · ${onRadio} on radio` : ''
+					}`}
 				/>
 				<StatTile
 					icon={<Headphones className="h-4 w-4" />}

@@ -48,7 +48,7 @@ import {
 export const metadata: Metadata = {
 	title: 'Pepper | Best Discord Music Bot for Seamless Streaming',
 	description:
-		'Add Pepper to your Discord server for high-quality music streaming from Spotify, Apple Music, Deezer and SoundCloud. Lag-free playback, autoplay, queue management and slash commands.',
+		'Add Pepper to your Discord server for high-quality music streaming from Spotify, Apple Music, Deezer and SoundCloud, plus live radio. Lag-free playback, autoplay, queue management and slash commands.',
 	keywords: [
 		'Discord music bot',
 		'Pepper music bot',
@@ -57,6 +57,7 @@ export const metadata: Metadata = {
 		'Apple Music music bot',
 		'high quality Discord music',
 		'Discord voice channel bot',
+		'Discord radio bot',
 		'queue management Discord bot',
 		'Discord audio streaming bot',
 	],
@@ -157,8 +158,9 @@ const Page: NextPage = async () => {
 									style={{ animationDelay: '180ms' }}
 								>
 									Pepper joins your voice channel, finds the track and plays it
-									in seconds — from Spotify, Apple Music, Deezer and SoundCloud.
-									No setup, no paywall, no queue babysitting.
+									in seconds — from Spotify, Apple Music, Deezer and SoundCloud,
+									or tunes into live radio. No setup, no paywall, no queue
+									babysitting.
 								</p>
 
 								<div

@@ -303,6 +303,62 @@ export interface StatsPlaylistDetail extends Omit<StatsPublicPlaylist, 'rank'> {
 	tracks: StatsPlaylistTrack[];
 }
 
+/** `curated` stations are hand-picked and verified; `radiobrowser` ones come from the Radio Browser directory. */
+export type StatsRadioSource = 'curated' | 'radiobrowser';
+
+/** `GET /stats/radio` → `topStations[]`, ranked by listening time, then tune-ins. */
+export interface StatsRadioStation {
+	rank: number;
+	stationId: string;
+	name: string;
+	genre: string;
+	/** ISO 3166-1 alpha-2 code, e.g. `IN`. */
+	country: string | null;
+	artworkUrl: string | null;
+	source: StatsRadioSource;
+	/** Times the station was started with `/radio`. */
+	playCount: number;
+	/** Measured time on air, flushed by the bot every five minutes. */
+	totalDurationMs: number;
+	lastPlayed: string;
+}
+
+export interface StatsRadioSummary {
+	uniqueStations: number;
+	totalPlays: number;
+	totalListenMs: number;
+	totalSessions: number;
+	topGenre: string | null;
+	countries: number;
+}
+
+/**
+ * `GET /stats/radio` (Pepper-Bot 5.15.0+). Radio is tracked apart from music,
+ * so none of it is counted in the song, requester or playtime endpoints.
+ * `summary` is null until someone has tuned in.
+ */
+export interface StatsRadio {
+	limit: number;
+	summary: StatsRadioSummary | null;
+	topStations: StatsRadioStation[];
+}
+
+/** The station behind a live player, when it was started with `/radio`. */
+export interface StatsRealtimeRadio {
+	stationId: string;
+	name: string;
+	genre: string;
+	/** ISO 3166-1 alpha-2 code, e.g. `IN`. */
+	country: string | null;
+	artworkUrl: string | null;
+	homepage: string | null;
+	source: StatsRadioSource;
+	codec: string;
+	bitrate: number;
+	/** Time since the station was started; stream reconnects do not reset it. */
+	onAirMs: number;
+}
+
 export interface StatsRealtimeTrack {
 	guildId: string;
 	guildName: string | null;
@@ -320,6 +376,11 @@ export interface StatsRealtimeTrack {
 	sourceName: string;
 	requester: StatsSongUser | null;
 	shardId: number;
+	/**
+	 * Set while the player is streaming a station; `title` and `author` are then
+	 * whatever the stream reports. Missing from bots that predate it.
+	 */
+	radio?: StatsRealtimeRadio | null;
 }
 
 /** `GET /stats/realtime` */
@@ -350,6 +411,7 @@ export interface StatsBundle {
 	playtime: StatsPlaytime | null;
 	servers: StatsServers | null;
 	playlists: StatsPlaylists | null;
+	radio: StatsRadio | null;
 }
 
 export interface FeatureCardProps {

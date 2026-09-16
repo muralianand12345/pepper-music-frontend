@@ -178,8 +178,9 @@ const faqs: { group: string; items: { q: string; a: React.ReactNode }[] }[] = [
 				a: (
 					<>
 						Only what the bot needs to work: things like your Discord user ID,
-						username and server ID, plus the songs played in a server and by
-						each user, which power <code className="font-mono text-foreground/80">/chart</code>,
+						username and server ID, plus the songs and radio stations played in
+						a server and by each user, which power{' '}
+						<code className="font-mono text-foreground/80">/chart</code>,
 						playlists and the public stats. None of it is sold. If you&apos;d
 						like your data removed, open a ticket in the{' '}
 						<a href={discordServerLink} target="_blank" rel="noreferrer" className={inlineLink}>

@@ -4,6 +4,7 @@ import {
 	StatsPlaylistDetail,
 	StatsPlaylists,
 	StatsPlaytime,
+	StatsRadio,
 	StatsRealtime,
 	StatsRequesters,
 	StatsServerInsight,
@@ -105,6 +106,18 @@ export const getPlaylist = (code: string): Promise<StatsPlaylistDetail> =>
 		ttlMs: STATS_TTL_MS,
 	});
 
+/**
+ * Top radio stations and totals. Added in Pepper-Bot 5.15.0; older bots 404 and
+ * the section is left out. Unlike the music endpoints the bot does not cache
+ * this aggregate itself, so the TTL here is its only shield.
+ */
+export const getRadio = (limit: number = DEFAULT_LIMIT): Promise<StatsRadio> =>
+	readStats<StatsRadio>('/radio', {
+		key: `stats:radio:${limit}`,
+		ttlMs: STATS_TTL_MS,
+		params: { limit },
+	});
+
 const settled = <T>(result: PromiseSettledResult<T>, label: string): T | null => {
 	if (result.status === 'fulfilled') return result.value;
 	console.error(`[stats] ${label} failed:`, result.reason);
@@ -117,6 +130,7 @@ export interface StatsBundleOptions {
 	playtime?: number;
 	servers?: number;
 	playlists?: number;
+	radio?: number;
 }
 
 /**
@@ -124,7 +138,7 @@ export interface StatsBundleOptions {
  * null so the rest of the page still renders.
  */
 export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<StatsBundle> => {
-	const [realtime, overview, songs, requesters, playtime, servers, playlists] =
+	const [realtime, overview, songs, requesters, playtime, servers, playlists, radio] =
 		await Promise.allSettled([
 			getRealtime(),
 			getOverview(),
@@ -133,6 +147,7 @@ export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<
 			getPlaytime(options.playtime ?? 10),
 			getServers(options.servers ?? 10),
 			getPlaylists(options.playlists ?? TOP_PLAYLIST_COUNT),
+			getRadio(options.radio ?? DEFAULT_LIMIT),
 		]);
 
 	return {
@@ -144,5 +159,6 @@ export const getStatsBundle = async (options: StatsBundleOptions = {}): Promise<
 		playtime: settled(playtime, 'playtime'),
 		servers: settled(servers, 'servers'),
 		playlists: settled(playlists, 'playlists'),
+		radio: settled(radio, 'radio'),
 	};
 };
