@@ -22,8 +22,12 @@ export interface RateLimitResult {
 	retryAfterSeconds: number;
 }
 
-/** Best-effort client identity. Behind a proxy, `x-forwarded-for` is the real one. */
-export const clientKey = (request: Request): string => {
+/**
+ * Best-effort client identity. Behind a proxy, `x-forwarded-for` is the real one.
+ * Takes a `Request` in route handlers, or `{ headers: await headers() }` in a
+ * server component.
+ */
+export const clientKey = (request: { headers: Pick<Headers, 'get'> }): string => {
 	const forwarded = request.headers.get('x-forwarded-for');
 	return (
 		forwarded?.split(',')[0]?.trim() ||

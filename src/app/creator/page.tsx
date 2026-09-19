@@ -2,6 +2,7 @@ import { Metadata, NextPage } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
+	ArrowRight,
 	ArrowUpRight,
 	Bot,
 	ChevronDown,
@@ -28,8 +29,7 @@ import {
 	Surface,
 } from '@/components/shared/page/parts';
 import Reveal from '@/components/shared/reveal';
-import PayPalButton from '@/components/shared/support/paypalButton';
-import { discordServerLink, privacyLink } from '@/constants';
+import { discordServerLink, donateLink, privacyLink } from '@/constants';
 
 export const metadata: Metadata = {
 	title: 'The creator | Murali Anand, the developer behind Pepper',
@@ -393,10 +393,8 @@ const Creator: NextPage = () => {
 					<div className="mx-auto max-w-5xl">
 						<Reveal>
 							<Surface className="p-8 md:p-10">
-								{/* PayPal's form runs far taller than the copy, so the copy
-								    rides alongside it rather than floating mid-column. */}
-								<div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem] lg:items-start">
-									<div className="max-w-xl lg:sticky lg:top-24">
+								<div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+									<div className="max-w-xl">
 										<IconChip>
 											<HeartHandshake className="h-4 w-4" />
 										</IconChip>
@@ -407,17 +405,16 @@ const Creator: NextPage = () => {
 											Pepper is free to use, but not free to run — the audio
 											nodes it streams through and the lyrics service behind it
 											are servers I host. If Pepper has earned its place in your
-											server and you&apos;d like to help keep it there, this is
-											the way.
-										</p>
-										<p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
-											It&apos;s entirely optional and unlocks nothing: every
-											command stays free for everyone either way. Any amount
-											helps, and PayPal emails you a receipt.
+											server, a donation helps keep it there. It&apos;s entirely
+											optional and unlocks nothing.
 										</p>
 									</div>
 
-									<PayPalButton />
+									<ActionLink href={donateLink} className="shrink-0">
+										<HeartHandshake className="h-4 w-4" />
+										Donate
+										<ArrowRight className="h-4 w-4" />
+									</ActionLink>
 								</div>
 							</Surface>
 						</Reveal>

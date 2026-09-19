@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import {
 	ArrowRight,
 	HeartHandshake,
@@ -23,6 +24,8 @@ import UpkeepGrid from '@/components/shared/support/upkeepGrid';
 import Celebration from '@/components/shared/thanks/celebration';
 import TransactionReference from '@/components/shared/thanks/transactionReference';
 import { discordServerLink, featursLink, inviteLink } from '@/constants';
+import { lookupDonation } from '@/lib/paypal-pdt';
+import { clientKey } from '@/lib/rate-limit';
 
 /**
  * Where PayPal sends people after they pay — this page's URL is the auto-return
@@ -30,10 +33,12 @@ import { discordServerLink, featursLink, inviteLink } from '@/constants';
  * out of the index and the sitemap.
  *
  * With auto-return on, PayPal appends Payment Data Transfer fields to the URL.
- * Only two are read, and neither is trusted: anyone can type this address, so
- * the page never claims an amount, and it grants nothing. `tx` is shown so the
- * payer can quote it in a ticket; `st` only softens the copy when PayPal is
- * still clearing the payment.
+ * Anyone can type this address, so nothing in the query string is believed:
+ * `tx` is looked up with PayPal (`lib/paypal-pdt`), and the payer's first name
+ * and amount appear only when PayPal confirms a payment to this account. When
+ * it cannot — no token configured, a made-up ID, PayPal slow to answer — the
+ * page thanks the visitor without naming them, and `st` alone decides whether
+ * to say the payment is still clearing. The page grants nothing either way.
  */
 export const metadata: Metadata = {
 	title: 'Thank you | Pepper',
@@ -48,6 +53,13 @@ const TRANSACTION_ID = /^[A-Z0-9]{17}$/;
 
 const first = (value: string | string[] | undefined) =>
 	Array.isArray(value) ? value[0] : value;
+
+// `en` rather than the payer's locale, so a currency is always named in full:
+// "NZ$5.00", never a bare "$5.00" that reads as US dollars.
+const formatAmount = (amount: string, currency: string) =>
+	new Intl.NumberFormat('en', { style: 'currency', currency }).format(
+		Number(amount)
+	);
 
 const nextSteps = [
 	{
@@ -75,7 +87,13 @@ const ThankYouPage = async ({
 	const params = await searchParams;
 	const tx = first(params.tx)?.trim().toUpperCase();
 	const transactionId = tx && TRANSACTION_ID.test(tx) ? tx : null;
-	const pending = first(params.st)?.toLowerCase() === 'pending';
+
+	const donation = transactionId
+		? await lookupDonation(transactionId, clientKey({ headers: await headers() }))
+		: null;
+	const pending = donation
+		? donation.pending
+		: first(params.st)?.toLowerCase() === 'pending';
 
 	return (
 		<div className="min-h-screen bg-background text-foreground">
@@ -104,13 +122,25 @@ const ThankYouPage = async ({
 								className="rise mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-[-0.035em] md:text-[3.5rem]"
 								style={{ animationDelay: '100ms' }}
 							>
-								You just kept the music playing.
+								{donation?.firstName
+									? `Thank you, ${donation.firstName}.`
+									: 'You just kept the music playing.'}
 							</h1>
 
 							<p
 								className="rise mt-5 max-w-[52ch] text-base leading-relaxed text-muted-foreground md:text-lg"
 								style={{ animationDelay: '180ms' }}
 							>
+								{donation && (
+									<>
+										Your{' '}
+										<span className="font-medium text-foreground">
+											{formatAmount(donation.amount, donation.currency)}
+										</span>{' '}
+										donation{' '}
+										{donation.pending ? 'is on its way.' : 'just came through.'}{' '}
+									</>
+								)}
 								Pepper has no premium tier and nothing behind a paywall, so it
 								runs on people who chip in — and today, that is you.{' '}
 								{pending
