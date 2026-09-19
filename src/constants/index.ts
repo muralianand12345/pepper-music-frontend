@@ -7,6 +7,7 @@ export const primaryNavItems: MenuItemType[] = [
 	{ name: 'Stats', value: '/stats' },
 	{ name: 'About', value: '/about-us' },
 	{ name: 'Feedback', value: '/feedback' },
+	{ name: 'Donate', value: '/donate' },
 ];
 
 /** Legal pages — reachable from the footer and the mobile menu, not the top nav. */
@@ -20,11 +21,18 @@ export const secondaryNavItems: MenuItemType[] = [
 	{ name: 'The creator', value: '/creator' },
 ];
 
+/** Public pages no menu links to — reached from outside the site. */
+export const unlistedNavItems: MenuItemType[] = [
+	// PayPal's auto-return URL: where payers land after checkout.
+	{ name: 'Thank you', value: '/thank-you' },
+];
+
 /** Every first-party page. `middleware.ts` derives its public-route list from this. */
 export const menuItems: MenuItemType[] = [
 	...primaryNavItems,
 	...legalNavItems,
 	...secondaryNavItems,
+	...unlistedNavItems,
 ];
 
 export const commonRoutes = ['/auth', '/public', '/images', '/dashboard'];
@@ -38,10 +46,22 @@ export const inviteLink: string = `https://discord.com/api/oauth2/authorize?clie
 export const twitterLink: string = 'https://twitter.com';
 export const discordServerLink: string = 'https://discord.gg/XzE9hSbsNb';
 
+/**
+ * PayPal hosted button for chipping in. The client ID is PayPal's public,
+ * browser-side identifier — it is meant to sit in page source, not in a secret.
+ * The same ID doubles as a plain payment link, used when the SDK is blocked.
+ */
+export const paypalClientId =
+	'BAA4kfLmtaPJ_KRtXvs-fjgXcq9oGP-I6fVpdwEz8hxQakvgdd0Z9pMYpB1BEVA9Zv4ap87lpIKfbEg-lc';
+export const paypalHostedButtonId = 'LGSVAJUHJDB9C';
+export const paypalCurrency = 'NZD';
+export const paypalPaymentLink = `https://www.paypal.com/ncp/payment/${paypalHostedButtonId}`;
+
 export const featursLink = '/bot-features';
 export const termsLink = '/terms-of-service';
 export const privacyLink = '/privacy-policy';
 export const feedbackLink = '/feedback';
+export const donateLink = '/donate';
 export const pepperLogoLink = '/images/brand/pepper-mascot-transparent.png';
 
 export const features = [

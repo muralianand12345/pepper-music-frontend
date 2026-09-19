@@ -4,6 +4,7 @@ import { ArrowUpRight, MessageSquare } from 'lucide-react';
 
 import {
 	discordServerLink,
+	donateLink,
 	featursLink,
 	feedbackLink,
 	inviteLink,
@@ -30,6 +31,7 @@ const columns = [
 			{ label: 'About us', href: '/about-us', external: false },
 			{ label: 'The creator', href: '/creator', external: false },
 			{ label: 'Send feedback', href: feedbackLink, external: false },
+			{ label: 'Donate', href: donateLink, external: false },
 		],
 	},
 	{
