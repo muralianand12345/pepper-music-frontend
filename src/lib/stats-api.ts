@@ -12,7 +12,7 @@ import {
 	StatsSongs,
 } from '@/types';
 
-import { fetchUpstream, withCache } from './upstream';
+import { cachedAt, fetchUpstream, withCache } from './upstream';
 
 /**
  * Server-side client for the bot's stats API (`/api/v1/stats/*`).
@@ -28,7 +28,8 @@ const DEFAULT_LIMIT = 10;
 /** Matches the bot's own 60s stats cache. */
 const STATS_TTL_MS = 60_000;
 /** Realtime is genuinely live, but not 15-browsers-at-once live. */
-const REALTIME_TTL_MS = 10_000;
+export const REALTIME_TTL_MS = 10_000;
+const REALTIME_KEY = 'stats:realtime';
 
 const authHeaders = (): Record<string, string> => {
 	const apiKey = process.env.STATS_API_KEY?.trim();
@@ -45,7 +46,10 @@ const readStats = <T>(
 	);
 
 export const getRealtime = (): Promise<StatsRealtime> =>
-	readStats<StatsRealtime>('/realtime', { key: 'stats:realtime', ttlMs: REALTIME_TTL_MS });
+	readStats<StatsRealtime>('/realtime', { key: REALTIME_KEY, ttlMs: REALTIME_TTL_MS });
+
+/** When the snapshot `getRealtime` last returned was read from the bot. */
+export const realtimeReadAt = (): number | undefined => cachedAt(REALTIME_KEY);
 
 export const getOverview = (): Promise<StatsOverview> =>
 	readStats<StatsOverview>('/overview', { key: 'stats:overview', ttlMs: STATS_TTL_MS });

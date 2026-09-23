@@ -187,6 +187,12 @@ export const withCache = async <T>(
 };
 
 /**
+ * When the value `withCache` currently holds under `key` was read from the bot.
+ * A stale copy served while the bot is failing keeps its original read time.
+ */
+export const cachedAt = (key: string): number | undefined => entries.get(key)?.storedAt;
+
+/**
  * Snaps a caller-supplied list length to a step so `?songs=` cannot be varied
  * to walk straight past the cache — 100 distinct values would otherwise mean
  * 100 distinct upstream queries.

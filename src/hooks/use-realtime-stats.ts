@@ -2,117 +2,109 @@
 
 import React from 'react';
 
-import { StatsRealtime, StatsRealtimeTrack } from '@/types';
+import { StatsRealtime, StatsRealtimeEvent, StatsRealtimeTrack } from '@/types';
 import { isLiveDuration } from '@/utils/format';
 
+const STREAM_URL = '/api/stats/realtime/stream';
+/** First wait after the server refuses a connection; doubles with each refusal. */
+const RETRY_BASE_MS = 5_000;
 /** Backoff ceiling once the endpoint starts refusing us. */
-const MAX_POLL_INTERVAL_MS = 120_000;
+const MAX_RETRY_MS = 120_000;
+/** A tab left in the background this long gives its connection back; flicking between tabs does not. */
+const HIDDEN_GRACE_MS = 30_000;
 
 export interface RealtimeStatsState {
 	data: StatsRealtime | null;
-	/** True until the first successful read, and again whenever a poll fails. */
+	/** True until the first live reading, and again whenever the feed drops or goes stale. */
 	stale: boolean;
-	refreshing: boolean;
-	/** When `data` was read, so playback positions can be moved on between polls. */
+	/** When `data` was read from the bot, so playback positions can be moved on between updates. */
 	fetchedAt: number;
 }
 
 /**
- * Keeps a server-rendered realtime snapshot fresh from `/api/stats/realtime`.
+ * Keeps a server-rendered realtime snapshot live from `/api/stats/realtime/stream`.
  *
- * Polling is scheduled one tick at a time rather than on a fixed interval, so
- * it can do three things a plain `setInterval` cannot: stop entirely while the
- * tab is in the background, back off when the endpoint pushes back, and honour
- * a `Retry-After` instead of hammering through it. The route itself serves a
- * 10s cached copy, so however many cards poll, the bot sees one call per ten
- * seconds.
+ * The server only sends a snapshot when something changed, so in between,
+ * positions and clocks are moved on from `fetchedAt` — the moment the bot was
+ * read, not the moment the message arrived.
+ *
+ * `EventSource` reconnects a dropped stream on its own but gives up for good
+ * when the server refuses one (a 429 or 503), so refusals are retried here with
+ * backoff. A tab that stays in the background closes its stream; coming back
+ * reopens it, and the server answers with the latest snapshot straight away.
  */
-export const useRealtimeStats = (
-	initialData: StatsRealtime | null,
-	intervalMs: number
-): RealtimeStatsState => {
+export const useRealtimeStats = (initialData: StatsRealtime | null): RealtimeStatsState => {
 	const [data, setData] = React.useState<StatsRealtime | null>(initialData);
 	const [stale, setStale] = React.useState(!initialData);
 	const [fetchedAt, setFetchedAt] = React.useState(() => Date.now());
-	const [refreshing, setRefreshing] = React.useState(false);
 
 	React.useEffect(() => {
-		let cancelled = false;
-		let timer: ReturnType<typeof setTimeout> | undefined;
-		let failures = 0;
-		let delay = intervalMs;
-		/** Seconds the server asked us to wait, when it bothered to say. */
-		let retryAfterSeconds = 0;
+		let source: EventSource | null = null;
+		let retryTimer: ReturnType<typeof setTimeout> | undefined;
+		let hiddenTimer: ReturnType<typeof setTimeout> | undefined;
+		let refusals = 0;
 
-		const schedule = (wait: number) => {
-			if (cancelled) return;
-			clearTimeout(timer);
-			timer = setTimeout(poll, wait);
+		const disconnect = () => {
+			clearTimeout(retryTimer);
+			source?.close();
+			source = null;
 		};
 
-		const backOff = () => {
-			failures += 1;
-			const exponential = Math.min(intervalMs * 2 ** failures, MAX_POLL_INTERVAL_MS);
-			delay = Math.max(exponential, retryAfterSeconds * 1000);
-			retryAfterSeconds = 0;
-		};
+		const connect = () => {
+			disconnect();
+			const stream = new EventSource(STREAM_URL);
+			source = stream;
 
-		async function poll() {
-			// Nobody is looking — do not spend a request on it.
-			if (document.visibilityState === 'hidden') return schedule(intervalMs);
-
-			setRefreshing(true);
-			try {
-				const response = await fetch('/api/stats/realtime', {
-					cache: 'no-store',
-				});
-
-				if (response.status === 429) {
-					const header = Number(response.headers.get('retry-after'));
-					retryAfterSeconds = Number.isFinite(header) ? header : 0;
-					throw new Error('rate limited');
+			stream.onmessage = (event: MessageEvent<string>) => {
+				let message: StatsRealtimeEvent;
+				try {
+					message = JSON.parse(event.data) as StatsRealtimeEvent;
+				} catch {
+					return;
 				}
-				if (!response.ok) throw new Error(`status ${response.status}`);
-
-				const payload = (await response.json()) as StatsRealtime;
-				if (cancelled) return;
-
-				setData(payload);
-				setFetchedAt(Date.now());
+				refusals = 0;
+				setData(message.data);
+				setFetchedAt(Date.now() - message.ageMs);
 				setStale(false);
-				failures = 0;
-				delay = intervalMs;
-			} catch {
-				if (cancelled) return;
-				setStale(true);
-				backOff();
-			} finally {
-				if (!cancelled) {
-					setRefreshing(false);
-					schedule(delay);
-				}
-			}
-		}
+			};
 
-		// Coming back to the tab should show fresh numbers, not a stale snapshot.
+			// The bot stopped answering; keep the last reading on screen, flagged.
+			stream.addEventListener('stale', () => setStale(true));
+
+			stream.onerror = () => {
+				setStale(true);
+				// Still CONNECTING means the browser is already retrying a dropped stream.
+				if (stream.readyState !== EventSource.CLOSED) return;
+				refusals += 1;
+				retryTimer = setTimeout(
+					connect,
+					Math.min(RETRY_BASE_MS * 2 ** (refusals - 1), MAX_RETRY_MS)
+				);
+			};
+		};
+
 		const onVisibility = () => {
-			if (document.visibilityState !== 'visible') return;
-			failures = 0;
-			delay = intervalMs;
-			schedule(0);
+			clearTimeout(hiddenTimer);
+			if (document.visibilityState === 'hidden') {
+				hiddenTimer = setTimeout(disconnect, HIDDEN_GRACE_MS);
+			} else if (!source) {
+				connect();
+			}
 		};
 
 		document.addEventListener('visibilitychange', onVisibility);
-		schedule(delay);
+		connect();
+		// Opened in a background tab: start the grace period now.
+		onVisibility();
 
 		return () => {
-			cancelled = true;
-			clearTimeout(timer);
+			clearTimeout(hiddenTimer);
+			disconnect();
 			document.removeEventListener('visibilitychange', onVisibility);
 		};
-	}, [intervalMs]);
+	}, []);
 
-	return { data, stale, refreshing, fetchedAt };
+	return { data, stale, fetchedAt };
 };
 
 /** Current time, re-read every `intervalMs`; pass `null` to stop ticking. */

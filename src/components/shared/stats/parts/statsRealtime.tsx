@@ -5,7 +5,6 @@ import Image from 'next/image';
 import {
 	Disc3,
 	Headphones,
-	Loader2,
 	Radio,
 	Server,
 	Users,
@@ -36,11 +35,11 @@ import { EmptyState, StatsSection } from './section';
 import { CellGrid } from '@/components/shared/page/parts';
 import { StatTile } from './statTile';
 
-const POLL_INTERVAL_MS = 15_000;
 const INITIAL_VISIBLE_TRACKS = 12;
+const DESCRIPTION = 'A direct feed from the bot, updated within seconds of any change.';
 
 interface StatsRealtimeCardProps {
-	/** Snapshot rendered on the server; refreshed client-side from /api/stats/realtime. */
+	/** Snapshot rendered on the server; kept live from /api/stats/realtime/stream. */
 	initialData: StatsRealtime | null;
 }
 
@@ -198,11 +197,8 @@ const NowPlayingRow: React.FC<{
 export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 	initialData,
 }) => {
-	const { data, stale, refreshing, fetchedAt } = useRealtimeStats(
-		initialData,
-		POLL_INTERVAL_MS
-	);
-	// Ticks the progress bars forward between polls.
+	const { data, stale, fetchedAt } = useRealtimeStats(initialData);
+	// Ticks the progress bars and uptime forward between updates.
 	const now = useNow();
 	const [expanded, setExpanded] = React.useState(false);
 
@@ -212,7 +208,7 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 				id="live"
 				label="Right now"
 				title="Live activity"
-				description="A direct read from the bot, refreshed every few seconds."
+				description={DESCRIPTION}
 			>
 				<div className="flex items-center gap-3 rounded-lg border border-border bg-surface px-6 py-10 text-sm text-muted-foreground">
 					<WifiOff className="h-5 w-5 text-muted-foreground/85" />
@@ -234,9 +230,7 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 			id="live"
 			label="Right now"
 			title="Live activity"
-			description={`A direct read from the bot, refreshed every ${
-				POLL_INTERVAL_MS / 1000
-			} seconds.`}
+			description={DESCRIPTION}
 			action={
 				<span
 					className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.18em] ${
@@ -248,10 +242,6 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 					{stale ? (
 						<>
 							<WifiOff className="h-3 w-3" /> Reconnecting
-						</>
-					) : refreshing ? (
-						<>
-							<Loader2 className="h-3 w-3 animate-spin" /> Updating
 						</>
 					) : (
 						<>
@@ -294,7 +284,7 @@ export const StatsRealtimeCard: React.FC<StatsRealtimeCardProps> = ({
 				<StatTile
 					icon={<Wifi className="h-4 w-4" />}
 					label="Uptime"
-					value={formatUptime(data.uptime)}
+					value={formatUptime(data.uptime + elapsedMs)}
 				/>
 			</CellGrid>
 

@@ -398,6 +398,13 @@ export interface StatsRealtime {
 	nowPlaying: StatsRealtimeTrack[];
 }
 
+/** One `message` event on the site's own `/api/stats/realtime/stream`. */
+export interface StatsRealtimeEvent {
+	/** How long ago the bot was read, so clocks are moved on from the right moment. */
+	ageMs: number;
+	data: StatsRealtime;
+}
+
 /**
  * Every stats endpoint fetched in one pass. Sections resolve independently so a
  * single failing endpoint degrades that card instead of the whole page.

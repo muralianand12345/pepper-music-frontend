@@ -34,17 +34,15 @@ import {
  * playing in some server right now, when there is one.
  *
  * The snapshot comes from the same cached realtime read as the hero metrics and
- * is refreshed at half the stats page's rate: this is a teaser, and a song
- * rarely ends inside thirty seconds. When nothing is playing, or the bot cannot
- * be reached, it falls back to the illustrative example below. That state never
- * carries the Live badge, so it cannot pass for a reading.
+ * stays live on the same stream as the stats page. When nothing is playing, or
+ * the bot cannot be reached, it falls back to the illustrative example below.
+ * That state never carries the Live badge, so it cannot pass for a reading.
  *
  * The controls browse what is playing across Pepper; they only change what this
  * card shows. Nothing here can reach a real player — these are other people's
  * servers.
  */
 
-const POLL_INTERVAL_MS = 30_000;
 /** How long Loop lingers on each song before moving to the next. */
 const LOOP_INTERVAL_MS = 12_000;
 
@@ -118,7 +116,7 @@ const activeControlClass =
 	'border-[var(--pepper-red)]/45 bg-[var(--pepper-red)]/10 text-[var(--pepper-red)] hover:border-[var(--pepper-red)]/60 hover:bg-[var(--pepper-red)]/15 hover:text-[var(--pepper-red)]';
 
 const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) => {
-	const { data, fetchedAt } = useRealtimeStats(initialData, POLL_INTERVAL_MS);
+	const { data, fetchedAt } = useRealtimeStats(initialData);
 	const [currentKey, setCurrentKey] = React.useState<string | null>(null);
 	const [looping, setLooping] = React.useState(false);
 	const [queueOpen, setQueueOpen] = React.useState(false);
@@ -129,9 +127,9 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 	const now = useNow(playing.length ? 1000 : null);
 	const elapsedMs = Math.max(now - fetchedAt, 0);
 
-	// A song that has run out since the last poll drops off, so the card moves on
+	// A song that has run out since the last update drops off, so the card moves on
 	// instead of parking on a full bar — unless every song has, in which case the
-	// last reading beats flashing the example until the next poll.
+	// last reading beats flashing the example until the next update.
 	const unfinished = playing.filter(
 		(track) =>
 			isLiveDuration(track.duration) || livePosition(track, elapsedMs) < track.duration
@@ -141,7 +139,7 @@ const NowPlayingMock = ({ initialData }: { initialData: StatsRealtime | null }) 
 	const trackIndex = track ? queue.indexOf(track) : -1;
 	const canSkip = queue.length > 1;
 
-	// Remember what is on screen, so a poll that reorders the list does not swap
+	// Remember what is on screen, so an update that reorders the list does not swap
 	// it mid-song.
 	React.useEffect(() => {
 		const key = track ? trackKey(track) : null;

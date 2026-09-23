@@ -4,13 +4,11 @@ import { clientKey, createRateLimiter, tooManyRequests } from '@/lib/rate-limit'
 import { getRealtime } from '@/lib/stats-api';
 
 /**
- * Polled by the live "now playing" card. `getRealtime` holds a 10s in-process
- * copy, so a room full of open tabs still costs the bot one call every ten
- * seconds; the limiter below is what stops a script doing the same thing a
- * thousand times a second.
+ * A one-off read of the realtime snapshot. The site's own cards stay live on
+ * `./stream` instead. `getRealtime` holds a 10s in-process copy, so however
+ * often this is called it costs the bot one call every ten seconds; the limiter
+ * below is what stops a script doing the same thing a thousand times a second.
  */
-
-/** The card polls every 15s (4/min); this leaves room for several tabs. */
 const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
 
 export const GET = async (request: NextRequest) => {
